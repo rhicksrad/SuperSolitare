@@ -45,7 +45,7 @@ You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-re
 
 This app is configured to deploy to `rhicksrad.github.io/SuperSolitare`.
 
-- Vite is configured with `base: '/SuperSolitare/'` for production builds.
+- Vite is configured with `base: '/SuperSolitare/'` for production builds. In dev, it runs at `/`.
 - The workflow `.github/workflows/deploy.yml` builds and publishes the `dist` folder to GitHub Pages on pushes to `main`.
 
 Local build for docs (optional):
