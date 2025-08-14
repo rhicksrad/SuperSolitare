@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420" aria-label="Archivist Joker playing card">
+  <title>Archivist Joker</title>
+
+  <!-- 0) Card (largest) -->
+  <rect x="8" y="8" width="284" height="404" rx="18" fill="#fff" stroke="#111" stroke-width="2"/>
+
+  <defs>
+    <!-- Keep artwork off the border -->
+    <clipPath id="faceClip">
+      <rect x="9" y="9" width="282" height="402" rx="16"/>
+    </clipPath>
+
+    <!-- Tabbed folder (for reuse) -->
+    <g id="folder" stroke="#111" stroke-width="2" stroke-linejoin="round">
+      <path d="M -18 -10 h 10 l 4 -6 h 18 v 26 h -32 z" fill="#ffca28"/>
+      <rect x="-16" y="-6" width="28" height="18" fill="#fff" opacity="0.6"/>
+    </g>
+
+    <!-- Filing cabinet (3 drawers) -->
+    <g id="cabinet" stroke="#111" stroke-width="3" stroke-linejoin="round">
+      <!-- Case (large) -->
+      <rect x="-54" y="-36" width="108" height="132" rx="6" fill="#f5f5f5"/>
+      <!-- Drawers (mid) -->
+      <g>
+        <rect x="-48" y="-30" width="96" height="36" rx="4" fill="#ffffff"/>
+        <rect x="-48" y="  6" width="96" height="36" rx="4" fill="#ffffff"/>
+        <rect x="-48" y=" 42" width="96" height="36" rx="4" fill="#ffffff"/>
+      </g>
+      <!-- Labels + handles (small) -->
+      <g stroke-width="2">
+        <!-- Top -->
+        <rect x="-16" y="-20" width="32" height="12" fill="none"/>
+        <rect x="-8"  y="-6"  width="16" height="6"  rx="3" fill="#111"/>
+        <!-- Mid -->
+        <rect x="-16" y=" 16" width="32" height="12" fill="none"/>
+        <rect x="-8"  y=" 30" width="16" height="6"  rx="3" fill="#111"/>
+        <!-- Bottom -->
+        <rect x="-16" y=" 52" width="32" height="12" fill="none"/>
+        <rect x="-8"  y=" 66" width="16" height="6"  rx="3" fill="#111"/>
+      </g>
+    </g>
+
+    <!-- NEW motif: archivist jester (no reuse from prior jokers) -->
+    <g id="archivistJoker" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <!-- A) Base forms (largest first) -->
+      <!-- Filing cabinet sits left; jester to the right -->
+      <use href="#cabinet" transform="translate(-24,14)"/>
+      <!-- Torso -->
+      <path d="M 4 26 Q 24 16 42 26 L 38 58 Q 20 66 2 58 Z" fill="#212121"/>
+      <!-- Head -->
+      <circle cx="22" cy="0" r="14" fill="#212121"/>
+      <!-- Hat band -->
+      <rect x="10" y="-12" width="24" height="8" rx="3" fill="#111"/>
+
+      <!-- B) Mid details -->
+      <!-- Jester prongs -->
+      <path d="M 22 -12 C  0 -34 -30 -26 -28 -8 S  4 -2 16 -2" fill="none"/>
+      <path d="M 22 -12 C 22 -36 22 -54 22 -68 S 30 -40 24 -12" fill="none"/>
+      <path d="M 22 -12 C 44 -34 74 -26 72 -8 S 40 -2 28 -2" fill="none"/>
+      <!-- Collar -->
+      <path d="M 0 14 L 10 22 L 22 12 L 34 24 L 48 14
+               L 44 28 Q 22 36 2 28 Z" fill="#e53935"/>
+
+      <!-- Arm reaching to cabinet with a folder -->
+      <path d="M 6 30 C -4 28 -10 20 -16 12" fill="none"/>
+      <g transform="translate(-16,12)">
+        <rect x="-4" y="-4" width="8" height="16" rx="2" fill="#111"/>
+        <use href="#folder" transform="translate(-6,-14) rotate(-10)"/>
+      </g>
+
+      <!-- C) Smallest details -->
+      <!-- Face -->
+      <path d="M 16 -2 l 5 -3 l -5 -3" fill="none"/>
+      <path d="M 28 -2 l -5 -3 l 5 -3" fill="none"/>
+      <path d="M 16 8 Q 22 12 28 8" fill="none"/>
+      <!-- Hat bells -->
+      <circle cx="-28" cy="-8" r="4.5" fill="#fbbc05"/>
+      <circle cx="22"  cy="-68" r="4.5" fill="#e53935"/>
+      <circle cx="72"  cy="-8"  r="4.5" fill="#1e88e5"/>
+
+      <!-- Top-of-cabinet folders (mid/small accents, drawn after cabinet) -->
+      <use href="#folder" transform="translate(-40,-44) rotate(-8)"/>
+      <use href="#folder" transform="translate(-20,-46) rotate(6)"/>
+      <use href="#folder" transform="translate(  0,-44) rotate(16)"/>
+    </g>
+  </defs>
+
+  <!-- 1) Face content (clipped) -->
+  <g clip-path="url(#faceClip)">
+    <!-- Optional subtle bars (largest on the face) -->
+    <rect x="12" y="300" width="276" height="14" fill="#1e88e5" opacity="0.16"/>
+    <rect x="12" y="326" width="276" height="10" fill="#e53935" opacity="0.14"/>
+
+    <!-- Ghost mirror (background-ish) -->
+    <use href="#archivistJoker" transform="translate(150,276) scale(0.96) rotate(180)" opacity="0.18"/>
+
+    <!-- Main Joker (foreground) -->
+    <use href="#archivistJoker" transform="translate(150,152) scale(0.96)"/>
+  </g>
+
+  <!-- 2) Side text -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" letter-spacing="1.3" fill="#111">
+    <text x="30"  y="210" font-size="26" transform="rotate(-90 30 210)">JOKER</text>
+    <text x="270" y="210" font-size="26" transform="rotate(90 270 210)">JOKER</text>
+  </g>
+
+  <!-- 3) Corner indices -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" fill="#111">
+    <text x="20"  y="34"  font-size="18">J</text>
+    <text x="280" y="386" font-size="18" transform="rotate(180 280 386)">J</text>
+  </g>
+</svg>

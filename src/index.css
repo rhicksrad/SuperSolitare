@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: var(--color-slate-900);
+  --color-fg: var(--color-slate-100);
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  @apply bg-slate-900 text-slate-100 antialiased;
+  background-image: url('/assets/backgrounds/ss-bg.svg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+}
+/* Focus ring tokens */
+:focus-visible {
+  outline: var(--ss-focus-ring);
+  outline-offset: var(--ss-focus-offset);
+}
+
+/* Simple pop anim for card appearance */
+.card-pop {
+  animation: card-pop 140ms ease-out;
+}
+
+@keyframes card-pop {
+  0% { transform: translateY(6px) scale(0.98); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.card-lift {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+
+/* Theme switches via data-theme attribute */
+html[data-theme='light'] body {
+  @apply bg-white text-slate-900;
+}
+html[data-theme='high-contrast'] body {
+  background-color: #000;
+  color: #fff;
+}
+
+/* Board and card sizing utilities for classic solitaire feel */
+:root {
+  --felt-green: #0f6a3b;
+  --card-width: 96px;
+  --card-height: 136px;
+  --card-small-width: 64px;
+  --card-small-height: 90px;
+}
+.w-16 { width: var(--card-width); }
+.h-22 { height: var(--card-height); }
+.w-10 { width: var(--card-small-width); }
+.h-14 { height: var(--card-small-height); }
+.w-12 { width: calc(var(--card-small-width) + 8px); }
+.h-18 { height: calc(var(--card-small-height) + 12px); }
+.board-felt { background: transparent; }
+.board-width { width: clamp(880px, calc(var(--card-width) * 8 + 12px * 7 + 96px), 1200px); margin-left: auto; margin-right: auto; }

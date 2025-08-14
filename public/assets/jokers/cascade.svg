@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420" aria-label="Cascade Joker playing card">
+  <title>Cascade Joker</title>
+
+  <!-- 0) Card (largest) -->
+  <rect x="8" y="8" width="284" height="404" rx="18" fill="#fff" stroke="#111" stroke-width="2"/>
+
+  <defs>
+    <!-- Keep artwork off the border -->
+    <clipPath id="faceClip">
+      <rect x="9" y="9" width="282" height="402" rx="16"/>
+    </clipPath>
+
+    <!-- Tile variants (bold, high-contrast) -->
+    <g id="tileR">
+      <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#e53935" stroke="#111" stroke-width="2"/>
+    </g>
+    <g id="tileB">
+      <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#1e88e5" stroke="#111" stroke-width="2"/>
+    </g>
+    <g id="tileY">
+      <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#ffca28" stroke="#111" stroke-width="2"/>
+    </g>
+    <g id="tileG">
+      <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#43a047" stroke="#111" stroke-width="2"/>
+    </g>
+
+    <!-- NEW motif: Cascade Joker (fresh design) -->
+    <g id="cascadeJoker" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <!-- A) Base forms (largest first) -->
+      <!-- Torso -->
+      <path d="M -44 36 Q 0 18 44 36 L 38 68 Q 0 80 -38 68 Z" fill="#212121"/>
+      <!-- Head -->
+      <circle cx="6" cy="-4" r="16" fill="#212121"/>
+      <!-- Hat band -->
+      <rect x="-10" y="-18" width="32" height="10" rx="4" fill="#111"/>
+
+      <!-- B) Mid details -->
+      <!-- Jester prongs (forward-leaning) -->
+      <path d="M 6 -18 C -28 -42 -68 -28 -62 -8 S -20 -2 -4 -4" fill="none"/>
+      <path d="M 6 -18 C 6 -48 6 -70 6 -86 S 14 -48 10 -18" fill="none"/>
+      <path d="M 6 -18 C 38 -42 74 -28 70 -8 S 26 -2 12 -4" fill="none"/>
+      <!-- Collar -->
+      <path d="M -40 12 L -24 22 L -10 12 L 4 24 L 20 12 L 34 18
+               Q 8 36 -32 26 Z" fill="#e53935"/>
+
+      <!-- Right arm pushing a tile -->
+      <path d="M 10 26 C 26 18 44 10 60 6" fill="none"/>
+      <rect x="56" y="0" width="16" height="12" rx="3" fill="#111" stroke="#111"/> <!-- hand -->
+
+      <!-- C) Smallest details (face + bells) -->
+      <path d="M 0 -6 l 6 -3 l -6 -3" fill="none"/>
+      <path d="M 12 -6 l -6 -3 l  6 -3" fill="none"/>
+      <path d="M 0 6 Q 6 10 12 6" fill="none"/>
+      <circle cx="-62" cy="-10" r="5" fill="#ffca28"/>
+      <circle cx="6"   cy="-86" r="5" fill="#e53935"/>
+      <circle cx="70"  cy="-10" r="5" fill="#1e88e5"/>
+    </g>
+  </defs>
+
+  <!-- 1) Face content (clipped) -->
+  <g clip-path="url(#faceClip)">
+    <!-- 1a) Falling tile cascade (largest tiles first, then smaller) -->
+    <g>
+      <!-- Big background tiles (drawn first) -->
+      <use href="#tileB" transform="translate(240,40) rotate(-18) scale(1.8)" opacity="0.22"/>
+      <use href="#tileY" transform="translate(212,80) rotate(-18) scale(1.6)" opacity="0.22"/>
+      <use href="#tileR" transform="translate(186,120) rotate(-18) scale(1.4)" opacity="0.22"/>
+      <use href="#tileG" transform="translate(160,158) rotate(-18) scale(1.25)" opacity="0.22"/>
+      <!-- Mid-size background tiles -->
+      <use href="#tileB" transform="translate(134,196) rotate(-18) scale(1.1)" opacity="0.22"/>
+      <use href="#tileY" transform="translate(110,230) rotate(-18) scale(1.0)" opacity="0.22"/>
+      <use href="#tileR" transform="translate(88,262)  rotate(-18) scale(0.95)" opacity="0.22"/>
+    </g>
+
+    <!-- 1b) Ghost mirror (background-ish) -->
+    <use href="#cascadeJoker" transform="translate(150,276) scale(0.96) rotate(180)" opacity="0.18"/>
+
+    <!-- 1c) Main Joker (foreground) -->
+    <use href="#cascadeJoker" transform="translate(150,152) scale(0.96)"/>
+
+    <!-- 1d) Foreground tiles near the hand (smallest → last) -->
+    <use href="#tileY" transform="translate(200,112) rotate(-22) scale(0.90)"/>
+    <use href="#tileR" transform="translate(182,128) rotate(-18) scale(0.82)"/>
+    <use href="#tileB" transform="translate(166,144) rotate(-16) scale(0.76)"/>
+  </g>
+
+  <!-- 2) Side text -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" letter-spacing="1.3" fill="#111">
+    <text x="30"  y="210" font-size="26" transform="rotate(-90 30 210)">JOKER</text>
+    <text x="270" y="210" font-size="26" transform="rotate(90 270 210)">JOKER</text>
+  </g>
+
+  <!-- 3) Corner indices -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" fill="#111">
+    <text x="20"  y="34"  font-size="18">J</text>
+    <text x="280" y="386" font-size="18" transform="rotate(180 280 386)">J</text>
+  </g>
+</svg>

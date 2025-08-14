@@ -1,0 +1,15 @@
+/* Purged demo styles; Tailwind classes are used instead */
+/* TODO(UI/PHASE7): Add design tokens and component-specific styles if needed */
+
+/* Accessibility utility for visually hidden labels */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

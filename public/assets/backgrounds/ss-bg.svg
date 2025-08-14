@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="g0" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b3a2a"/>
+      <stop offset="1" stop-color="#0b2540"/>
+    </linearGradient>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#45caff" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#2af598" stop-opacity="0.1"/>
+    </linearGradient>
+    <pattern id="p-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M0 0H80V80H0Z" fill="none"/>
+      <path d="M0 0L80 0M0 40L80 40M0 80L80 80M0 0L0 80M40 0L40 80M80 0L80 80" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#66e" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Deep gradient background -->
+  <rect width="1600" height="900" fill="url(#g0)"/>
+
+  <!-- Soft angled bands -->
+  <g opacity="0.25">
+    <path d="M-200 200 L1800 0 L1800 220 L-200 420Z" fill="url(#g1)"/>
+    <path d="M-200 700 L1800 520 L1800 740 L-200 920Z" fill="url(#g1)"/>
+  </g>
+
+  <!-- Subtle grid overlay -->
+  <rect width="1600" height="900" fill="url(#p-grid)"/>
+
+  <!-- Corner glows -->
+  <circle cx="1400" cy="120" r="420" fill="url(#glow)"/>
+  <circle cx="120" cy="780" r="380" fill="url(#glow)"/>
+</svg>
+
+

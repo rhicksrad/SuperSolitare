@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="180" viewBox="0 0 128 180" fill="none">
+  <rect x="6" y="6" width="116" height="168" rx="10" fill="#0f172a" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="64" cy="72" r="26" fill="#22d3ee" opacity="0.2"/>
+  <path d="M44 96c10-10 20-26 20-38 8 6 13 10 20 16-8 0-14 2-18 6 4 3 7 6 12 8-10 2-18 6-26 8-2-1-5 0-8 0z" fill="#22d3ee"/>
+  <rect x="20" y="126" width="88" height="28" rx="6" fill="#083344" stroke="#22d3ee"/>
+  <text x="64" y="145" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#e2e8f0" text-anchor="middle">Early Bird</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420" aria-label="Bird Joker — Sunrise Clockburst (ordered layers)">
+  <title>Bird Joker — Sunrise Clockburst (large→small draw order)</title>
+
+  <!-- 0) Card background (largest) -->
+  <rect x="8" y="8" width="284" height="404" rx="18" fill="#fff" stroke="#111" stroke-width="2"/>
+
+  <defs>
+    <!-- Keep artwork off the border -->
+    <clipPath id="faceClip">
+      <rect x="9" y="9" width="282" height="402" rx="16"/>
+    </clipPath>
+
+    <!-- Gradients -->
+    <linearGradient id="dawn" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#e65100"/>
+      <stop offset="0.55" stop-color="#fb8c00"/>
+      <stop offset="1" stop-color="#fff176"/>
+    </linearGradient>
+    <linearGradient id="rayInk" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ff8f00"/>
+      <stop offset="1" stop-color="#ffca28"/>
+    </linearGradient>
+
+    <!-- Upper-half clip so the sunrise only bursts upward -->
+    <clipPath id="upperHalf">
+      <rect x="9" y="9" width="282" height="210"/>
+    </clipPath>
+
+    <!-- A single ray (we'll rotate many copies) -->
+    <rect id="ray" x="-1.25" y="-120" width="2.5" height="120" rx="1.25" fill="url(#rayInk)"/>
+
+    <!-- Bird Joker symbol: order inside is large→small as well -->
+    <g id="birdJoker" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Base forms (larger) -->
+      <rect x="-44" y="36" width="88" height="8" rx="4" fill="#111"/>            <!-- Perch -->
+      <ellipse cx="0" cy="10" rx="34" ry="26" fill="#212121"/>                   <!-- Body -->
+      <path d="M -6 6 C -28 18 -24 34 0 28 C 10 26 20 18 16 8 Z" fill="#2c2c2c"/> <!-- Wing -->
+      <circle cx="10" cy="-10" r="16" fill="#212121"/>                           <!-- Head -->
+
+      <!-- Mid-size details -->
+      <path d="M -8 32 q -10 18 -8 34" fill="none"/>  <!-- Tail quills -->
+      <path d="M  0 32 q   0 22   0 38" fill="none"/>
+      <path d="M  8 32 q  10 18   8 34" fill="none"/>
+      <path d="M -18 2 L -8 12 L 0 0 L 10 14 L 22 2
+               L 18 12 Q 8 18 -6 12 Z" fill="#e53935"/>                             <!-- Collar -->
+      <path d="M 8 -22 C -2 -42 -30 -46 -36 -28 S -8 -16 0 -18" fill="none"/>     <!-- Crest lines -->
+      <path d="M 8 -22 C 12 -52 10 -64 14 -78 S 26 -42 20 -22" fill="none"/>
+      <path d="M 8 -22 C 22 -40 48 -42 54 -26 S 24 -16 16 -18" fill="none"/>
+
+      <!-- Smallest details (last) -->
+      <path d="M 22 -12 L 40 -8 L 22 -4 Z" fill="#fb8c00"/>                       <!-- Beak -->
+      <circle cx="14" cy="-14" r="4.5" fill="#fff"/>                              <!-- Eye white -->
+      <circle cx="14" cy="-14" r="2.2" fill="#111"/>                              <!-- Pupil -->
+      <circle cx="-16" cy="66" r="5.5" fill="#e53935"/>                           <!-- Tail bells -->
+      <circle cx="0"   cy="70" r="5.5" fill="#fbbc05"/>
+      <circle cx="16"  cy="66" r="5.5" fill="#1e88e5"/>
+    </g>
+  </defs>
+
+  <!-- 1) Face content (clipped) -->
+  <g clip-path="url(#faceClip)">
+
+    <!-- 1a) Sunrise clockburst (largest shapes first) -->
+    <g transform="translate(150,210)" clip-path="url(#upperHalf)">
+      <!-- Sun disk (large) -->
+      <circle cx="0" cy="0" r="60" fill="url(#dawn)"/>
+
+      <!-- Rays (medium) -->
+      <use href="#ray" transform="rotate(-84)"/>
+      <use href="#ray" transform="rotate(-72)"/>
+      <use href="#ray" transform="rotate(-60)"/>
+      <use href="#ray" transform="rotate(-48)"/>
+      <use href="#ray" transform="rotate(-36)"/>
+      <use href="#ray" transform="rotate(-24)"/>
+      <use href="#ray" transform="rotate(-12)"/>
+      <use href="#ray" transform="rotate(0)"/>
+      <use href="#ray" transform="rotate(12)"/>
+      <use href="#ray" transform="rotate(24)"/>
+      <use href="#ray" transform="rotate(36)"/>
+      <use href="#ray" transform="rotate(48)"/>
+      <use href="#ray" transform="rotate(60)"/>
+      <use href="#ray" transform="rotate(72)"/>
+      <use href="#ray" transform="rotate(84)"/>
+
+      <!-- Clock rings (smaller than rays) -->
+      <g fill="none" stroke="#111" stroke-width="2">
+        <path d="M -112 0 A 112 112 0 0 1 112 0"/>
+        <path d="M -92 0 A 92 92 0 0 1 92 0"/>
+        <path d="M -72 0 A 72 72 0 0 1 72 0"/>
+      </g>
+
+      <!-- Tick marks (smallest → last) -->
+      <g stroke="#111" stroke-width="2">
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-90)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-75)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-60)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-45)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-30)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(-15)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(0)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(15)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(30)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(45)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(60)"/>
+        <line x1="0" y1="-112" x2="0" y2="-104" transform="rotate(75)"/>
+      </g>
+    </g>
+
+    <!-- 1b) Bottom mirrored Bird Joker (background-ish) -->
+    <use href="#birdJoker" transform="translate(150,272) scale(0.95) rotate(180)" opacity="0.20"/>
+
+    <!-- 1c) Top Bird Joker (on top of burst) -->
+    <use href="#birdJoker" transform="translate(150,150) scale(0.95)"/>
+  </g>
+
+  <!-- 2) Side text (small, over everything on the face) -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" letter-spacing="1.3" fill="#111">
+    <text x="30"  y="210" font-size="26" transform="rotate(-90 30 210)">JOKER</text>
+    <text x="270" y="210" font-size="26" transform="rotate(90 270 210)">JOKER</text>
+  </g>
+
+  <!-- 3) Corner indices (smallest of all) -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="800" fill="#111">
+    <text x="20"  y="34"  font-size="18">J</text>
+    <text x="280" y="386" font-size="18" transform="rotate(180 280 386)">J</text>
+  </g>
+</svg>

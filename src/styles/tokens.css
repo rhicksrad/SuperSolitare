@@ -1,0 +1,23 @@
+@theme {
+  --ss-spacing-1: 0.25rem;
+  --ss-spacing-2: 0.5rem;
+  --ss-spacing-3: 0.75rem;
+  --ss-spacing-4: 1rem;
+  --ss-radius-card: 0.5rem;
+  --ss-radius-pill: 9999px;
+  --ss-font-size-xs: 0.75rem;
+  --ss-font-size-sm: 0.875rem;
+  --ss-font-size-md: 1rem;
+  --ss-font-size-lg: 1.125rem;
+  --ss-accent: var(--color-sky-400);
+  --ss-accent-contrast: var(--color-slate-900);
+  --ss-card-surface: var(--color-slate-900);
+  --ss-suit-hearts: var(--color-rose-400);
+  --ss-suit-diamonds: var(--color-rose-300);
+  --ss-suit-spades: var(--color-slate-300);
+  --ss-suit-clubs: var(--color-slate-200);
+  --ss-focus-ring: 2px solid var(--ss-accent);
+  --ss-focus-offset: 2px;
+}
+
+
