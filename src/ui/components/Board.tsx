@@ -168,7 +168,7 @@ export default function Board() {
                 <div
                   key={c.id}
                   className="absolute left-0.5"
-                  style={{ top: idx * FAN }}
+                  style={{ top: idx * FAN, transition: 'transform 120ms ease' }}
                   draggable={c.faceUp}
                   onDragStart={(e) => {
                     if (!c.faceUp) return
@@ -177,7 +177,6 @@ export default function Board() {
                     selectCustom(pile.id, count)
                     e.dataTransfer.setData('text/plain', 'drag')
                   }}
-                  style={{ transition: 'transform 120ms ease' }}
                   onDragEnter={() => { if (soundsOn) playSnap() }}
                   onDragEnd={() => setIsDragging(false)}
                   onMouseDown={(e) => {
