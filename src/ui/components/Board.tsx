@@ -74,12 +74,14 @@ export default function Board() {
           <div
             role="button"
             tabIndex={0}
-            aria-label={`Stock. ${stock?.cards.length || 0} cards remaining. Press Enter to deal.`}
+            aria-label={`Stock. ${stock?.cards.length || 0} cards remaining. ${(round?.redealsLeft || 0)} redeals left. Press Enter to deal.`}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); deal(); if (soundsOn) playDeal() } }}
             onClick={() => { deal(); if (soundsOn) playDeal() }}
-            className="w-16 h-22 rounded-md border border-slate-700/60 bg-slate-800/40 flex items-center justify-center"
+            title={`Redeals left: ${round?.redealsLeft || 0}`}
+            className="w-16 h-22 rounded-md border border-slate-700/60 bg-slate-800/40 flex items-center justify-center relative"
           >
             {stock?.cards.length ? <div className="w-12 h-16 rounded border border-blue-700 bg-blue-800" /> : <span className="text-[10px] text-slate-200">Stock</span>}
+            <div className="absolute -top-1 -right-1 rounded-full bg-slate-900/80 border border-slate-700 text-[10px] px-1.5 py-0.5">⟳ {round?.redealsLeft || 0}</div>
           </div>
           <div
             role="button"

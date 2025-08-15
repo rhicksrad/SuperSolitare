@@ -10,7 +10,7 @@ export default function JokerTray({ jokers }: { jokers: Joker[] }) {
   const emptySlots = Math.max(0, 5 - jokers.length)
   const sell = useStore((s) => s.sellJoker)
   const gods = useStore((s) => s.run?.godCards || [])
-  const unequip = useStore((s) => (s as any).unequipJoker)
+  
   const moveLeft = (id: string) => (useStore.getState() as any).moveJoker(id, 'left')
   const moveRight = (id: string) => (useStore.getState() as any).moveJoker(id, 'right')
   const reorder = (id: string, toIndex: number) => (useStore.getState() as any).reorderJoker?.(id, toIndex)
@@ -125,7 +125,6 @@ export default function JokerTray({ jokers }: { jokers: Joker[] }) {
           </div>
           <div className="mt-1 flex items-center justify-center gap-1">
             <button className="rounded bg-slate-700 px-2 py-0.5 text-[10px]" onClick={() => sell(j.id)}>Sell</button>
-            <button className="rounded bg-slate-700 px-2 py-0.5 text-[10px]" onClick={() => unequip(j.id)}>Unequip</button>
           </div>
           <div className="mt-1 flex items-center justify-center gap-1">
             <button disabled={idx === 0} className="rounded bg-slate-700 disabled:opacity-40 px-1 py-0.5 text-[10px]" onClick={() => moveLeft(j.id)}>←</button>

@@ -50,9 +50,12 @@ export default function TopMenu() {
 
           {/* Score + Timer */}
           {currentRound && (
-            <div className="px-3 py-1.5 rounded-xl bg-slate-800/60 border border-slate-700/70 text-slate-200 text-xs shadow-sm whitespace-nowrap">
-              Score: <span className="font-semibold">{currentRound.score}</span>
-              <span className="opacity-70"> / {currentRound.config.targetScore}</span>
+            <div className="px-3 py-1.5 rounded-xl bg-slate-800/60 border border-slate-700/70 text-slate-200 text-xs shadow-sm whitespace-nowrap flex items-center gap-3">
+              <div>
+                Score: <span className="font-semibold">{currentRound.score}</span>
+                <span className="opacity-70"> / {currentRound.config.targetScore}</span>
+              </div>
+              <div title="Rotations of stock remaining" className="px-2 py-0.5 rounded bg-slate-900/60 border border-slate-700">⟳ {currentRound.redealsLeft}</div>
             </div>
           )}
           <div className="px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700/70 text-slate-200 shadow-sm"><Timer /></div>

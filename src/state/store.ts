@@ -604,11 +604,7 @@ export const useStore = create<UIState>((set, get) => ({
     const nextGods = run.godCards.slice(); nextGods.splice(idx, 1)
     return { run: { ...run, godCards: nextGods } }
   }),
-  unequipJoker: (jokerId: string) => set((s): Partial<UIState> => {
-    if (!s.run) return {}
-    const nextJokers = s.run.jokers.filter((j) => j.id !== jokerId)
-    return { run: { ...s.run, jokers: nextJokers } }
-  }),
+  // Removing jokers is only possible via selling
   moveJoker: (jokerId: string, direction: 'left' | 'right') => set((s): Partial<UIState> => {
     if (!s.run) return {}
     const arr = s.run.jokers.slice()
