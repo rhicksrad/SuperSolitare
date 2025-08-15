@@ -274,6 +274,13 @@ export const useStore = create<UIState>((set, get) => ({
   dealStock: () => {
     const { currentRound, run, currentBosses } = get()
     if (!run || !currentRound) return
+    // Prevent dealing a new group while previous dealt group hasn't been fully consumed
+    const stockPile = currentRound.piles.find((p) => p.id === 'stock')
+    const groupRem = (currentRound as any).wasteGroupRemaining || 0
+    if ((stockPile?.cards.length || 0) > 0 && groupRem > 0) {
+      set({ lastMessage: { type: 'info', text: 'Play the waste cards first', ts: Date.now() } })
+      return
+    }
     // Normal dealing from stock/waste cycling
     const move: Move = { kind: 'deal_stock' }
     const legal = isLegalMove(currentRound, move)

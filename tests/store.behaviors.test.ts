@@ -62,7 +62,7 @@ describe('Store behaviors: Tactician and stock/waste gating', () => {
     expect(f0.cards.length).toBe(0)
   })
 
-  it('Allows dealing stock repeatedly regardless of waste contents', () => {
+  it('Prevents dealing new stock group until waste group is consumed (gating restored)', () => {
     const cfg = roundConfig(1)
     const round = {
       config: cfg,
@@ -99,13 +99,15 @@ describe('Store behaviors: Tactician and stock/waste gating', () => {
     const before = (useStore.getState().currentRound as any).piles.find((p: any) => p.id === 'stock').cards.length
     useStore.getState().dealStock()
     const after = (useStore.getState().currentRound as any).piles.find((p: any) => p.id === 'stock').cards.length
-    expect(after).toBeLessThan(before)
-    expect((useStore.getState().currentRound as any).wasteGroupRemaining).toBeGreaterThan(0)
+    expect(after).toBe(before)
+    expect(useStore.getState().lastMessage?.text).toMatch(/Play the waste cards first/i)
 
-    // Dealing again should continue to reduce stock
+    // Now clear gating and ensure dealing proceeds
+    useStore.setState((s) => ({ ...s, currentRound: { ...(s.currentRound as any), wasteGroupRemaining: 0 } as any }))
     useStore.getState().dealStock()
     const afterSecond = (useStore.getState().currentRound as any).piles.find((p: any) => p.id === 'stock').cards.length
-    expect(afterSecond).toBeLessThan(after)
+    expect(afterSecond).toBeLessThan(before)
+    expect((useStore.getState().currentRound as any).wasteGroupRemaining).toBeGreaterThan(0)
   })
 })
 
