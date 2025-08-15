@@ -59,7 +59,10 @@ export function evaluateRound(state: RoundState, blind: BlindType): RoundOutcome
   const perfectClear = state.piles.filter((p) => p.type === 'foundation').reduce((n, p) => n + p.cards.length, 0) === 52
   const coinsFromBonus = Math.round(bonus / 50) // convert bonus points to coins modestly
   const perfectCoins = perfectClear ? 5 : 0
-  const coinsEarned = baseCoins + coinsFromBonus + perfectCoins
+  // Ensure minimum coin floor so players can buy at least one pack per board
+  const minByBlind: Record<BlindType, number> = { small: 8, big: 10, boss: 12 }
+  const preliminary = baseCoins + coinsFromBonus + perfectCoins
+  const coinsEarned = success ? Math.max(preliminary, minByBlind[blind]) : preliminary
   const summary = {
     blind,
     success,

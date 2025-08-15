@@ -113,7 +113,7 @@ export default function JokerTray({ jokers }: { jokers: Joker[] }) {
             )}
           >
             <div className="relative w-[96px] h-[136px] mx-auto">
-              <img src={`${assetBase}/assets/jokers/${j.id}.svg`} alt={j.name} className="absolute inset-0 w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+              <img src={`${assetBase}/assets/jokers/${j.id}.svg`} alt={j.name} className="absolute inset-0 w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = `${assetBase}/assets/jokers/placeholder.svg` }} />
               <div className="absolute inset-0 rounded-md border border-slate-700/60" />
             </div>
           </Tooltip>

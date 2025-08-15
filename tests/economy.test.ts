@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { LcgRng } from '../src/game/rng'
 import { rarityWeights, priceBands, priceFor, generateShopOffers } from '../src/game/shop'
+import { evaluateRound } from '../src/game/run'
 import { useStore } from '../src/state/store'
 import { jokerRegistry } from '../src/game/jokers'
 
@@ -51,6 +52,26 @@ describe('Economy basics', () => {
     // Common average ~4 refund from store implementation; accept 3..6 for future tuning
     expect(coins).toBeGreaterThanOrEqual(2)
     expect(coins).toBeLessThanOrEqual(10)
+  })
+
+  it('coin floors ensure one pack per board is affordable on success', () => {
+    // Small
+    const small = {
+      config: { targetScore: 500, timeLimitSec: 120, redeals: 2, dealSize: 3 },
+      piles: [], score: 0, streak: 0, streakMultiplier: 1, redealsLeft: 2, timeRemainingSec: 120, moveHistory: [], undoStack: [],
+    } as any
+    // Give a successful score but low base to test floor
+    small.score = small.config.targetScore
+    const outSmall = evaluateRound(small as any, 'small')
+    expect(outSmall.coinsEarned).toBeGreaterThanOrEqual(8)
+
+    const big = { ...small, score: small.config.targetScore } as any
+    const outBig = evaluateRound(big as any, 'big')
+    expect(outBig.coinsEarned).toBeGreaterThanOrEqual(10)
+
+    const boss = { ...small, score: small.config.targetScore } as any
+    const outBoss = evaluateRound(boss as any, 'boss')
+    expect(outBoss.coinsEarned).toBeGreaterThanOrEqual(12)
   })
 })
 
