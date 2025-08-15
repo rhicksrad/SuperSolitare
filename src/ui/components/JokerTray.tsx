@@ -3,6 +3,10 @@ import { useStore } from '../../state/store'
 import Tooltip from './Tooltip'
 
 export default function JokerTray({ jokers }: { jokers: Joker[] }) {
+  const assetBase = (() => {
+    const b = (import.meta as any).env?.BASE_URL || '/'
+    return b.endsWith('/') ? b.slice(0, -1) : b
+  })()
   const emptySlots = Math.max(0, 5 - jokers.length)
   const sell = useStore((s) => s.sellJoker)
   const gods = useStore((s) => s.run?.godCards || [])
@@ -109,7 +113,7 @@ export default function JokerTray({ jokers }: { jokers: Joker[] }) {
             )}
           >
             <div className="relative w-[96px] h-[136px] mx-auto">
-              <img src={`/assets/jokers/${j.id}.svg`} alt={j.name} className="absolute inset-0 w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+              <img src={`${assetBase}/assets/jokers/${j.id}.svg`} alt={j.name} className="absolute inset-0 w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
               <div className="absolute inset-0 rounded-md border border-slate-700/60" />
             </div>
           </Tooltip>

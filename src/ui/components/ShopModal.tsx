@@ -1,7 +1,23 @@
 import { useStore } from '../../state/store'
 import { jokerRegistry } from '../../game/jokers'
 
+function numberToWords(num: number): string {
+  const n = Math.max(0, Math.floor(num))
+  const ones = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen']
+  const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety']
+  if (n < 20) return ones[n]
+  if (n < 100) {
+    const t = Math.floor(n / 10), o = n % 10
+    return o === 0 ? tens[t] : `${tens[t]}-${ones[o]}`
+  }
+  return String(n)
+}
+
 export default function ShopModal() {
+  const assetBase = (() => {
+    const b = (import.meta as any).env?.BASE_URL || '/'
+    return b.endsWith('/') ? b.slice(0, -1) : b
+  })()
   const open = useStore((s) => s.shopOpen)
   const offers = useStore((s) => s.shopOffers)
   const coins = useStore((s) => s.run?.coins ?? 0)
@@ -24,7 +40,7 @@ export default function ShopModal() {
               {o.kind === 'joker' && (
                 <>
                   <div className="relative w-[96px] h-[136px] mx-auto">
-                    <img className="absolute inset-0 w-full h-full object-contain drop-shadow" src={`/assets/jokers/${o.jokerId}.svg`} alt={o.name} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                    <img className="absolute inset-0 w-full h-full object-contain drop-shadow" src={`${assetBase}/assets/jokers/${o.jokerId}.svg`} alt={o.name} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
                     <div className="absolute inset-0 rounded-md border border-slate-700/60" />
                   </div>
                   <div className="mt-1 text-center px-1">
@@ -62,8 +78,8 @@ export default function ShopModal() {
                   <div className="text-xs opacity-80">{o.description}</div>
                 </>
               )}
-              <button disabled={o.price > coins} onClick={() => buy(o.id)} className="rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 px-2 py-1 text-sm shadow" aria-label={`Buy ${o.name} for ${o.price} coins`}>
-                Buy {o.price}
+              <button disabled={o.price > coins} onClick={() => buy(o.id)} className="rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 px-2 py-1 text-sm shadow" aria-label={`${numberToWords(o.price)} coins`}>
+                {numberToWords(o.price)} coins
               </button>
               <button onClick={() => toggleLock(o.id)} className="rounded bg-slate-700 hover:bg-slate-600 px-2 py-1 text-xs shadow">{o.locked ? 'Unlock' : 'Lock'}</button>
             </div>
