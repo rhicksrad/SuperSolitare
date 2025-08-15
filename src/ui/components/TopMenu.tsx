@@ -18,6 +18,7 @@ export default function TopMenu() {
   const useGod = (id: string) => useStore.getState().useGodCard(id)
   const fullRedeal = useStore((s) => (s as any).fullRedeal)
   const bosses = useStore((s) => s.currentBosses)
+  const currentBlind = useStore((s) => s.currentBlind)
   // Skip controls offered only at start-of-round modal; not in top bar
   const startModalOpen = useStore((s) => (s as any).startModalOpen)
   const closeStartModal = () => useStore.setState({ startModalOpen: false })
@@ -51,6 +52,11 @@ export default function TopMenu() {
           {/* Score + Timer */}
           {currentRound && (
             <div className="px-3 py-1.5 rounded-xl bg-slate-800/60 border border-slate-700/70 text-slate-200 text-xs shadow-sm whitespace-nowrap flex items-center gap-3">
+              {currentBlind && (
+                <div className="px-2 py-0.5 rounded bg-slate-900/60 border border-slate-700" title="Current board">
+                  Board: <span className="font-semibold">{currentBlind === 'small' ? 'Small' : currentBlind === 'big' ? 'Big' : 'Boss'}</span>
+                </div>
+              )}
               <div>
                 Score: <span className="font-semibold">{currentRound.score}</span>
                 <span className="opacity-70"> / {currentRound.config.targetScore}</span>
