@@ -378,11 +378,7 @@ export const useStore = create<UIState>((set, get) => ({
     const { currentRound } = get()
     if (!currentRound) return
     const waste = currentRound.piles.find((p) => p.id === 'waste')
-    if (!waste || waste.cards.length === 0) {
-      // If waste is empty, interpret click as a deal action
-      get().dealStock()
-      return
-    }
+    if (!waste || waste.cards.length === 0) return
     set({ selected: { fromPileId: 'waste', count: 1 } })
   },
   selectCustom: (fromPileId, count) => set({ selected: { fromPileId, count } }),
@@ -547,8 +543,32 @@ export const useStore = create<UIState>((set, get) => ({
       if (offer.packType === 'gods') deltaCoins = 0
       return { run: { ...s.run, coins: nextCoins + deltaCoins }, shopOffers: s.shopOffers.filter((o) => o.id !== id) }
     } else if (offer.kind === 'special') {
-      // Special: apply unique effect placeholder; just a cosmetic coin sink for now
-      return { run: { ...s.run, coins: nextCoins }, shopOffers: s.shopOffers.filter((o) => o.id !== id) }
+      // Apply concrete special effects
+      const run = s.run
+      let updates: Partial<UIState> = { run: { ...run, coins: nextCoins }, shopOffers: s.shopOffers.filter((o) => o.id !== id) }
+      if (offer.specialId === 'special-free-reroll') {
+        // Next reroll considered free by resetting shopRolls to 0
+        updates = { ...updates, shopRolls: 0 }
+      } else if (offer.specialId === 'special-redeal-plus') {
+        if (s.currentRound) updates.currentRound = { ...s.currentRound, redealsLeft: (s.currentRound.redealsLeft || 0) + 1 } as any
+      } else if (offer.specialId === 'special-time-30') {
+        if (s.currentRound) updates.currentRound = { ...s.currentRound, timeRemainingSec: (s.currentRound.timeRemainingSec || 0) + 30 } as any
+      } else if (offer.specialId === 'special-target-15') {
+        if (s.currentRound) {
+          const next = Math.max(0, Math.round((s.currentRound.config.targetScore || 0) * 0.85))
+          s.currentRound.config.targetScore = next
+          updates.currentRound = { ...s.currentRound }
+        }
+      } else if (offer.specialId === 'special-god-zephyr') {
+        const gods = [ ...(run.godCards || []), { id: 'zephyr', name: 'Zephyr', description: 'Reveal top card of each tableau', effect: 'reveal_tops' as any } ]
+        updates.run = { ...(updates.run as any), godCards: gods } as any
+      } else if (offer.specialId === 'special-rankup-random') {
+        const cats: Array<'foundation_move' | 'reveal_face_down' | 'empty_column'> = ['foundation_move','reveal_face_down','empty_column']
+        const pick = cats[Math.floor(Math.random() * cats.length)]
+        const ranks = { ...run.scoreRanks, [pick]: (run.scoreRanks[pick] || 1) + 0.1 }
+        updates.run = { ...(updates.run as any), scoreRanks: ranks } as any
+      }
+      return updates
     }
     return {}
   }),

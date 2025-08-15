@@ -44,7 +44,15 @@ export function generateShopOffers(seed: string, round: number, rollIndex: numbe
     { id: 'hermes', name: 'Hermes', description: 'Keeper of Secrets: rank up Reveal scoring', price: 9 },
     { id: 'hestia', name: 'Hestia', description: 'Warden of the Void: rank up Empty Column scoring', price: 9 },
   ]
-  const specials: Array<{ id: string; name: string; description: string; price: number }> = Array.from({ length: 25 }).map((_, i) => ({ id: `special-${i+1}`, name: `Special #${i+1}`, description: 'Unique offer for this round', price: 14 + (i % 4) }))
+  // Curated specials with concrete effects applied on purchase (handled in store)
+  const specials: Array<{ id: string; name: string; description: string; price: number }> = [
+    { id: 'special-free-reroll', name: 'Free Reroll', description: 'Reroll the shop once without the reroll fee.', price: 4 },
+    { id: 'special-redeal-plus', name: '+1 Redeal Now', description: 'Gain +1 redeal immediately this round.', price: 7 },
+    { id: 'special-time-30', name: '+30s Timer', description: 'Add +30 seconds to this round.', price: 8 },
+    { id: 'special-target-15', name: 'Target -15%', description: 'Reduce this round\'s target by 15%.', price: 10 },
+    { id: 'special-god-zephyr', name: 'God: Zephyr', description: 'Gain Zephyr god card (reveal tops).', price: 9 },
+    { id: 'special-rankup-random', name: 'Rank Up', description: 'Randomly rank up one scoring category (+0.1x).', price: 7 },
+  ]
 
   function packOffer(kind: 'cards' | 'jokers' | 'gods'): ShopOffer {
     const sizes = [3, 5]
