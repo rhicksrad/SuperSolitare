@@ -1,62 +1,248 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-bg: var(--color-slate-900);
-  --color-fg: var(--color-slate-100);
+:root {
+  --card-w: clamp(58px, 6.6vw, 92px);
+  --card-h: calc(var(--card-w) * 1.4);
+  --stack-gap: calc(var(--card-h) * 0.24);
+  --stack-gap-down: calc(var(--card-h) * 0.11);
+  --chips: #4f9cf9;
+  --mult: #f74d4d;
+  --gold: #f0b429;
 }
 
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
 
 body {
-  @apply bg-slate-900 text-slate-100 antialiased;
-  background-image: url('/assets/backgrounds/ss-bg.svg');
-  background-size: cover;
+  @apply text-slate-100 antialiased;
+  background-color: #101623;
+  background-image:
+    radial-gradient(1100px 600px at 50% -10%, rgba(59, 91, 156, 0.35), transparent 65%),
+    radial-gradient(900px 500px at 85% 110%, rgba(24, 94, 68, 0.28), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 6px);
   background-attachment: fixed;
-  background-position: center;
+  overflow-x: hidden;
 }
-/* Focus ring tokens */
+
+button {
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.card {
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: calc(var(--card-w) * 0.1);
+  user-select: none;
+  -webkit-user-drag: element;
+  position: relative;
+  transition: transform 120ms ease, box-shadow 120ms ease, outline-color 120ms ease;
+}
+
+.card-face {
+  background: linear-gradient(165deg, #fdfdf8 0%, #eceadf 100%);
+  color: #1d222b;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.card-face.red {
+  color: #c2273a;
+}
+
+.card-back {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0 18%, transparent 19%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 9px),
+    linear-gradient(165deg, #35427e 0%, #232b52 100%);
+  border: 1px solid rgba(12, 16, 38, 0.9);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+.card-selectable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.card-selected {
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+  transform: translateY(-6px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.55);
+  z-index: 30;
+}
+
+.card-pop-in {
+  animation: pop-in 160ms ease-out;
+}
+
+@keyframes pop-in {
+  from {
+    transform: translateY(8px) scale(0.96);
+    opacity: 0.2;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* enhancements */
+.enh-gilded {
+  box-shadow: 0 0 0 2px #d9a92c, 0 0 12px rgba(240, 180, 41, 0.65);
+}
+.enh-ruby {
+  box-shadow: 0 0 0 2px #d43a4b, 0 0 12px rgba(247, 77, 77, 0.6);
+}
+.enh-sapphire {
+  box-shadow: 0 0 0 2px #3c74e0, 0 0 12px rgba(79, 156, 249, 0.65);
+}
+.enh-lucky {
+  box-shadow: 0 0 0 2px #2fa35c, 0 0 12px rgba(66, 199, 122, 0.6);
+}
+
+/* pile outline */
+.pile-slot {
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: calc(var(--card-w) * 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.drop-ready {
+  outline: 3px solid rgba(240, 180, 41, 0.8);
+  outline-offset: 2px;
+  border-radius: calc(var(--card-w) * 0.1);
+}
+
+/* ------------------------------------------------------------- score pops */
+
+.pop-float {
+  animation: pop-float 1.5s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes pop-float {
+  0% {
+    transform: translateY(6px) scale(0.9);
+    opacity: 0;
+  }
+  12% {
+    transform: translateY(0) scale(1.08);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-18px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-34px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+.score-flash {
+  animation: score-flash 400ms ease-out;
+}
+
+@keyframes score-flash {
+  0% {
+    transform: scale(1.18);
+    filter: brightness(1.7);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.cashout-glow {
+  animation: cashout-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes cashout-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(240, 180, 41, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(240, 180, 41, 0.95);
+  }
+}
+
+/* --------------------------------------------------------------- panels */
+
+.panel {
+  background: linear-gradient(180deg, rgba(30, 39, 58, 0.92), rgba(20, 26, 40, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.joker-card {
+  background: linear-gradient(170deg, #2a3352, #1b2138);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  transition: transform 120ms ease;
+}
+
+.joker-card:hover {
+  transform: translateY(-3px);
+}
+
+.rarity-common {
+  box-shadow: inset 0 2px 0 #7f8ea8;
+}
+.rarity-uncommon {
+  box-shadow: inset 0 2px 0 #47c47a;
+}
+.rarity-rare {
+  box-shadow: inset 0 2px 0 #4f9cf9;
+}
+.rarity-legendary {
+  box-shadow: inset 0 2px 0 #c66df2;
+}
+
+/* custom tooltip */
+.has-tip {
+  position: relative;
+}
+.has-tip .tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 170px;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: #0d1220;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #dbe4f4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 60;
+  text-align: left;
+}
+.has-tip:hover .tip,
+.has-tip:focus-visible .tip {
+  opacity: 1;
+}
+
+.big-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
 :focus-visible {
-  outline: var(--ss-focus-ring);
-  outline-offset: var(--ss-focus-offset);
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
-
-/* Simple pop anim for card appearance */
-.card-pop {
-  animation: card-pop 140ms ease-out;
-}
-
-@keyframes card-pop {
-  0% { transform: translateY(6px) scale(0.98); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.card-lift {
-  transform: translateY(-2px);
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
-}
-
-/* Theme switches via data-theme attribute */
-html[data-theme='light'] body {
-  @apply bg-white text-slate-900;
-}
-html[data-theme='high-contrast'] body {
-  background-color: #000;
-  color: #fff;
-}
-
-/* Board and card sizing utilities for classic solitaire feel */
-:root {
-  --felt-green: #0f6a3b;
-  --card-width: 96px;
-  --card-height: 136px;
-  --card-small-width: 64px;
-  --card-small-height: 90px;
-}
-.w-16 { width: var(--card-width); }
-.h-22 { height: var(--card-height); }
-.w-10 { width: var(--card-small-width); }
-.h-14 { height: var(--card-small-height); }
-.w-12 { width: calc(var(--card-small-width) + 8px); }
-.h-18 { height: calc(var(--card-small-height) + 12px); }
-.board-felt { background: transparent; }
-.board-width { width: clamp(880px, calc(var(--card-width) * 8 + 12px * 7 + 96px), 1200px); margin-left: auto; margin-right: auto; }

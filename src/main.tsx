@@ -1,14 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './ui/App.tsx'
+import App from './ui/App'
+import { useGame } from './state/store'
 
-// Ensure background image works under both dev (/) and GitHub Pages (/SuperSolitare/)
-try {
-  const base = (import.meta as any).env?.BASE_URL || '/'
-  const bgUrl = `${base.replace(/\/$/, '')}/assets/backgrounds/ss-bg.svg`
-  document.body.style.backgroundImage = `url('${bgUrl}')`
-} catch {}
+// Test hook: lets Playwright drive the store directly in dev builds
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __game: typeof useGame }).__game = useGame
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
