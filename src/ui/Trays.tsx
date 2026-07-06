@@ -1,5 +1,7 @@
 import { describeJoker, jokerRegistry, sellValue } from '../engine/jokers'
 import { godRegistry } from '../engine/gods'
+import { EDITION_META } from '../engine/types'
+import { voucherRegistry } from '../engine/vouchers'
 import { useGame } from '../state/store'
 
 export function JokerTray() {
@@ -18,14 +20,18 @@ export function JokerTray() {
         return (
           <div
             key={j.id}
-            className={`joker-card rarity-${def.rarity} has-tip w-28 p-2 ${i === silencedIdx ? 'opacity-40 grayscale' : ''}`}
+            className={`joker-card rarity-${def.rarity} ${j.edition ? `edition-${j.edition}` : ''} has-tip w-28 p-2 ${i === silencedIdx ? 'opacity-40 grayscale' : ''}`}
             tabIndex={0}
           >
             <div className="text-xs font-bold leading-tight">{def.name}</div>
-            <div className="text-[10px] text-slate-400 capitalize">{def.rarity}</div>
+            <div className="text-[10px] text-slate-400 capitalize">
+              {def.rarity}
+              {j.edition && <span className={`ml-1 font-bold edition-text-${j.edition}`}>{EDITION_META[j.edition].name}</span>}
+            </div>
             <div className="tip">
               <div className="font-bold mb-1">{def.name}</div>
               {describeJoker(j)}
+              {j.edition && <div className="mt-1 text-sky-300">{EDITION_META[j.edition].description}</div>}
               {i === silencedIdx && <div className="mt-1 text-rose-300">Silenced this round!</div>}
               <div className="mt-1 text-slate-400">Sell for ${sellValue(j.id)}</div>
             </div>
@@ -84,6 +90,25 @@ export function GodTray() {
           god slot
         </div>
       ))}
+    </div>
+  )
+}
+
+export function VoucherStrip() {
+  const run = useGame((s) => s.run)
+  if (!run || run.vouchers.length === 0) return null
+  return (
+    <div className="flex gap-2 flex-wrap" data-testid="voucher-strip">
+      {run.vouchers.map((id) => {
+        const def = voucherRegistry[id]
+        if (!def) return null
+        return (
+          <div key={id} className="has-tip rounded-full bg-purple-500/20 border border-purple-400/40 px-3 py-1 text-xs font-semibold text-purple-200" tabIndex={0}>
+            {def.name}
+            <span className="tip">{def.description}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }

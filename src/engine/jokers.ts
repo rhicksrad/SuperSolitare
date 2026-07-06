@@ -89,6 +89,67 @@ const defs: JokerDef[] = [
     hooks: { onFoundationPlay: (ctx) => (ctx.rng() < 0.25 ? { money: 2 } : undefined) },
   },
 
+  {
+    id: 'spade-work',
+    name: 'Spade Work',
+    rarity: 'common',
+    cost: 4,
+    description: 'Spades give +40 chips when played to a foundation',
+    hooks: { onFoundationPlay: (ctx) => (ctx.card.suit === 'spades' ? { chips: 40 } : undefined) },
+  },
+  {
+    id: 'heart-throb',
+    name: 'Heart Throb',
+    rarity: 'common',
+    cost: 4,
+    description: 'Hearts give +40 chips when played to a foundation',
+    hooks: { onFoundationPlay: (ctx) => (ctx.card.suit === 'hearts' ? { chips: 40 } : undefined) },
+  },
+  {
+    id: 'even-steven',
+    name: 'Even Steven',
+    rarity: 'common',
+    cost: 5,
+    description: 'Even-ranked cards give +4 mult when played to a foundation',
+    hooks: { onFoundationPlay: (ctx) => (ctx.card.rank % 2 === 0 ? { mult: 4 } : undefined) },
+  },
+  {
+    id: 'odd-couple',
+    name: 'Odd Couple',
+    rarity: 'common',
+    cost: 5,
+    description: 'Odd-ranked cards give +35 chips when played to a foundation',
+    hooks: { onFoundationPlay: (ctx) => (ctx.card.rank % 2 === 1 ? { chips: 35 } : undefined) },
+  },
+  {
+    id: 'quick-draw',
+    name: 'Quick Draw',
+    rarity: 'common',
+    cost: 5,
+    description: 'Your first 5 foundation plays each round give +5 mult',
+    hooks: {
+      onFoundationPlay: (ctx) => (ctx.round.stats.foundationPlays <= 5 ? { mult: 5 } : undefined),
+    },
+  },
+  {
+    id: 'sommelier',
+    name: 'Sommelier',
+    rarity: 'common',
+    cost: 5,
+    description: '+2 mult for each foundation you have started this round',
+    hooks: {
+      onFoundationPlay: (ctx) => ({ mult: 2 * ctx.round.foundations.filter((f) => f.length > 0).length }),
+    },
+  },
+  {
+    id: 'scavenger',
+    name: 'Scavenger',
+    rarity: 'common',
+    cost: 4,
+    description: 'Discarding a card earns $1',
+    hooks: { onDiscard: () => ({ money: 1 }) },
+  },
+
   // --- Uncommon: conditions, resources, charges ---------------------------
   {
     id: 'streaker',
@@ -175,6 +236,78 @@ const defs: JokerDef[] = [
     },
   },
 
+  {
+    id: 'gold-tooth',
+    name: 'Gold Tooth',
+    rarity: 'uncommon',
+    cost: 6,
+    description: 'Face cards played to a foundation earn $1',
+    hooks: { onFoundationPlay: (ctx) => (isFace(ctx.card.rank) ? { money: 1 } : undefined) },
+  },
+  {
+    id: 'high-society',
+    name: 'High Society',
+    rarity: 'uncommon',
+    cost: 7,
+    description: '+7 mult while all four foundations have at least one card',
+    hooks: {
+      onFoundationPlay: (ctx) =>
+        ctx.round.foundations.every((f) => f.length > 0) ? { mult: 7 } : undefined,
+    },
+  },
+  {
+    id: 'undertaker',
+    name: 'Undertaker',
+    rarity: 'uncommon',
+    cost: 6,
+    description: 'Discarding a card scores +80 points',
+    hooks: { onDiscard: () => ({ chips: 80 }) },
+  },
+  {
+    id: 'purist',
+    name: 'The Purist',
+    rarity: 'uncommon',
+    cost: 7,
+    description: '×1.5 mult while you have not used a recycle this round',
+    hooks: {
+      onFoundationPlay: (ctx) =>
+        ctx.round.recyclesLeft === ctx.round.rules.recycles ? { xmult: 1.5 } : undefined,
+    },
+  },
+  {
+    id: 'twin-flame',
+    name: 'Twin Flame',
+    rarity: 'uncommon',
+    cost: 7,
+    description: '×2 mult when a play matches the rank of your previous foundation play',
+    hooks: {
+      onFoundationPlay: (ctx) => {
+        const prev = ctx.state.lastRank
+        ctx.state.lastRank = ctx.card.rank
+        return prev === ctx.card.rank ? { xmult: 2 } : undefined
+      },
+    },
+  },
+  {
+    id: 'librarian',
+    name: 'The Librarian',
+    rarity: 'uncommon',
+    cost: 7,
+    description: 'Foundation plays give +4 chips for every card revealed this round',
+    hooks: { onFoundationPlay: (ctx) => ({ chips: 4 * ctx.round.stats.reveals }) },
+  },
+  {
+    id: 'metronome',
+    name: 'Metronome',
+    rarity: 'uncommon',
+    cost: 8,
+    description: 'Every 5th foundation play of the round gets ×3 mult',
+    hooks: {
+      onFoundationPlay: (ctx) =>
+        ctx.round.stats.foundationPlays % 5 === 0 ? { xmult: 3 } : undefined,
+    },
+  },
+
   // --- Rare: build-defining -----------------------------------------------
   {
     id: 'midas',
@@ -218,6 +351,50 @@ const defs: JokerDef[] = [
     passives: { enhancementsTwice: true },
   },
 
+  {
+    id: 'moneybags',
+    name: 'Moneybags',
+    rarity: 'rare',
+    cost: 9,
+    description: '+1 mult on foundation plays per $10 you hold',
+    hooks: { onFoundationPlay: (ctx) => ({ mult: Math.floor(ctx.run.money / 10) }) },
+  },
+  {
+    id: 'cliffhanger',
+    name: 'Cliffhanger',
+    rarity: 'rare',
+    cost: 9,
+    description: '×2 mult on foundation plays while the stock is empty',
+    hooks: { onFoundationPlay: (ctx) => (ctx.round.stock.length === 0 ? { xmult: 2 } : undefined) },
+  },
+  {
+    id: 'philosopher',
+    name: 'The Philosopher',
+    rarity: 'rare',
+    cost: 10,
+    description: 'Enhanced cards give an extra +40 chips and +2 mult when played',
+    hooks: {
+      onFoundationPlay: (ctx) =>
+        ctx.run.enhancements[ctx.card.id] ? { chips: 40, mult: 2 } : undefined,
+    },
+  },
+  {
+    id: 'jackpot',
+    name: 'Jackpot',
+    rarity: 'rare',
+    cost: 9,
+    description: 'Lucky cards also give ×3 mult when their luck pays out',
+    // handled in the enhancement pipeline (needs the lucky roll result)
+  },
+  {
+    id: 'grand-architect',
+    name: 'Grand Architect',
+    rarity: 'rare',
+    cost: 10,
+    description: 'Emptying a column charges ×2 mult on your next 3 foundation plays',
+    hooks: { onEmptyColumn: (ctx) => void (ctx.round.boostCharges += 3) },
+  },
+
   // --- Legendary ------------------------------------------------------------
   {
     id: 'ouroboros',
@@ -239,6 +416,14 @@ const defs: JokerDef[] = [
           ctx.run.levels.foundation - 1 + (ctx.run.levels.reveal - 1) + (ctx.run.levels.empty_column - 1),
       }),
     },
+  },
+  {
+    id: 'atlas',
+    name: 'Atlas',
+    rarity: 'legendary',
+    cost: 15,
+    description: '+1 mult per foundation play already made this round — he only gets stronger',
+    hooks: { onFoundationPlay: (ctx) => ({ mult: ctx.round.stats.foundationPlays - 1 }) },
   },
 ]
 

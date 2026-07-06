@@ -7,14 +7,41 @@ import type { Move, RoundState, TableauId } from '../engine/klondike'
 import { foundationFor, hasAnyUsefulMove, isLegalMove } from '../engine/klondike'
 import { jokerRegistry, newJokerInstance, sellValue } from '../engine/jokers'
 import type { RoundResult } from '../engine/run'
-import { finishRound, newRun, skipBlind, startRound, applyGodCard } from '../engine/run'
+import { ensureBossForAnte, finishRound, newRun, skipBlind, startRound, applyGodCard } from '../engine/run'
 import { clearSave, loadGame, loadStats, saveGame, saveStats, todaysDailySeed } from '../engine/save'
 import type { LifetimeStats } from '../engine/save'
 import type { ScorePop } from '../engine/scoring'
-import { performMove } from '../engine/scoring'
+import { bossBlockReason, performMove } from '../engine/scoring'
 import type { RunState } from '../engine/types'
+import { configureAudio, sfx, unlockAudio } from '../ui/audio'
 
-export type Screen = 'menu' | 'blind-select' | 'playing' | 'shop' | 'game-over' | 'victory'
+export type Screen =
+  | 'menu'
+  | 'blind-select'
+  | 'playing'
+  | 'shop'
+  | 'game-over'
+  | 'victory'
+  | 'collection'
+  | 'settings'
+
+export interface Settings {
+  sfx: boolean
+  music: boolean
+  reduceMotion: boolean
+}
+
+const SETTINGS_KEY = 'ss-settings-v1'
+
+function loadSettings(): Settings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY)
+    if (raw) return { sfx: true, music: true, reduceMotion: false, ...(JSON.parse(raw) as Partial<Settings>) }
+  } catch {
+    /* defaults below */
+  }
+  return { sfx: true, music: true, reduceMotion: false }
+}
 
 export type Selection =
   | { source: 'waste' }
@@ -50,12 +77,16 @@ interface GameStore {
   rerolls: number
   pack: PackState
   skipReward: string | null
+  settings: Settings
 
   // menu / lifecycle
-  newGame: (seed?: string, mode?: 'standard' | 'daily') => void
+  newGame: (seed?: string, mode?: 'standard' | 'daily', deckId?: string, stake?: number) => void
   continueGame: () => void
   abandonRun: () => void
   backToMenu: () => void
+  goTo: (screen: Screen) => void
+  updateSettings: (patch: Partial<Settings>) => void
+  enterEndless: () => void
 
   // blind select
   playBlind: () => void
@@ -110,6 +141,22 @@ function pushPops(set: (fn: (s: GameStore) => Partial<GameStore>) => void, pops:
 export const useGame = create<GameStore>((set, get) => {
   const say = (text: string) => set({ message: { text, uid: popUid++ } })
 
+  const soundsFor = (move: Move, round: RoundState, pops: ScorePop[]) => {
+    if (move.kind === 'deal_stock' || move.kind === 'recycle') sfx.deal()
+    else if (move.kind === 'discard_waste') sfx.discard()
+    else if (pops.length === 0) sfx.place()
+    for (const p of pops) {
+      if (p.kind === 'foundation') {
+        sfx.play(round.streak)
+        if ((p.mult ?? 0) >= 12 || p.total >= 400) sfx.bigMult()
+      }
+      if (p.kind === 'reveal') sfx.reveal()
+      if (p.kind === 'empty_column') sfx.emptyColumn()
+      if (p.kind === 'clear') sfx.boardClear()
+      if (p.money && p.money > 0) sfx.money()
+    }
+  }
+
   const afterRoundStateChange = (run: RunState, round: RoundState, pops: ScorePop[]) => {
     set({ run, round, selection: null })
     pushPops(set as never, pops)
@@ -134,6 +181,7 @@ export const useGame = create<GameStore>((set, get) => {
       }
       saveStats(nextStats)
       clearSave()
+      sfx.lose()
       set({ run: nextRun, round: null, roundResult: result, screen: 'game-over', stats: nextStats, hasSave: false })
       return
     }
@@ -145,11 +193,13 @@ export const useGame = create<GameStore>((set, get) => {
         bestPlay: Math.max(stats.bestPlay, nextRun.bestPlay),
       }
       saveStats(nextStats)
-      clearSave()
+      clearSave() // enterEndless re-saves if the player continues
+      sfx.win()
       set({ run: nextRun, round: null, roundResult: result, screen: 'victory', stats: nextStats, hasSave: false })
       return
     }
     // Won the blind — go shopping
+    sfx.cashOut()
     const { offers } = generateShop(nextRun, 0)
     set({ run: nextRun, round: null, roundResult: result, screen: 'shop', shopOffers: offers, rerolls: 0, pack: null })
     persist(get)
@@ -173,10 +223,12 @@ export const useGame = create<GameStore>((set, get) => {
     rerolls: 0,
     pack: null,
     skipReward: null,
+    settings: loadSettings(),
 
-    newGame: (seed, mode = 'standard') => {
+    newGame: (seed, mode = 'standard', deckId = 'classic', stake = 0) => {
+      unlockAudio()
       const actualSeed = mode === 'daily' ? todaysDailySeed() : seed?.trim() || `run-${Date.now().toString(36)}`
-      const run = newRun(actualSeed, mode)
+      const run = newRun(actualSeed, mode, deckId, stake)
       const stats = { ...get().stats, runsStarted: get().stats.runsStarted + 1 }
       saveStats(stats)
       set({
@@ -221,10 +273,38 @@ export const useGame = create<GameStore>((set, get) => {
       set({ screen: 'menu', hasSave: !!loadGame() })
     },
 
+    goTo: (screen) => {
+      unlockAudio()
+      set({ screen })
+    },
+
+    updateSettings: (patch) => {
+      const settings = { ...get().settings, ...patch }
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+      } catch {
+        /* non-fatal */
+      }
+      configureAudio({ sfx: settings.sfx, music: settings.music })
+      if (settings.music || settings.sfx) unlockAudio()
+      set({ settings })
+    },
+
+    enterEndless: () => {
+      const { run } = get()
+      if (!run) return
+      const endlessRun = ensureBossForAnte({ ...run, endless: true }, run.ante)
+      set({ run: endlessRun, screen: 'blind-select', roundResult: null, hasSave: true })
+      persist(get)
+    },
+
     playBlind: () => {
       const { run } = get()
       if (!run) return
+      unlockAudio()
       const { round, run: nextRun } = startRound(run)
+      if (round.bossId) sfx.bossSting()
+      else sfx.deal()
       set({ run: nextRun, round, screen: 'playing', selection: null, pops: [], lastPlay: null, roundResult: null, stuck: false, skipReward: null })
       persist(get)
     },
@@ -232,8 +312,9 @@ export const useGame = create<GameStore>((set, get) => {
     skipCurrentBlind: () => {
       const { run } = get()
       if (!run || run.blindIndex >= 2) return
-      const { run: next, godId } = skipBlind(run)
-      set({ run: next, skipReward: godId })
+      const { run: next, message } = skipBlind(run)
+      sfx.click()
+      set({ run: next, skipReward: message })
       persist(get)
     },
 
@@ -243,14 +324,26 @@ export const useGame = create<GameStore>((set, get) => {
       const legal = isLegalMove(round, move)
       if (!legal.ok) {
         say(legal.reason)
+        sfx.error()
+        set({ selection: null })
+        return
+      }
+      const blocked = bossBlockReason(round, move)
+      if (blocked) {
+        say(blocked)
+        sfx.error()
         set({ selection: null })
         return
       }
       const out = performMove(round, run, move)
+      soundsFor(move, out.round, out.pops)
       afterRoundStateChange(out.run, out.round, out.pops)
     },
 
-    select: (sel) => set({ selection: sel }),
+    select: (sel) => {
+      if (sel) sfx.select()
+      set({ selection: sel })
+    },
 
     clickPile: (target) => {
       const { selection, round } = get()
@@ -358,12 +451,15 @@ export const useGame = create<GameStore>((set, get) => {
         return
       }
       if (offer.kind === 'joker') {
-        if (run.jokers.length >= run.jokerSlots) {
+        const slotsUsed = run.jokers.filter((j) => j.edition !== 'negative').length
+        if (offer.edition !== 'negative' && slotsUsed >= run.jokerSlots) {
           say('Joker slots are full — sell one first')
           return
         }
+        const joker = { ...newJokerInstance(offer.jokerId), ...(offer.edition ? { edition: offer.edition } : {}) }
+        sfx.buy()
         set({
-          run: { ...run, money: run.money - offer.price, jokers: [...run.jokers, newJokerInstance(offer.jokerId)] },
+          run: { ...run, money: run.money - offer.price, jokers: [...run.jokers, joker] },
           shopOffers: shopOffers.map((o) => (o.slot === slot ? { ...o, sold: true } : o)),
         })
       } else if (offer.kind === 'god') {
@@ -371,8 +467,18 @@ export const useGame = create<GameStore>((set, get) => {
           say('God card slots are full')
           return
         }
+        sfx.buy()
         set({
           run: { ...run, money: run.money - offer.price, consumables: [...run.consumables, offer.godId] },
+          shopOffers: shopOffers.map((o) => (o.slot === slot ? { ...o, sold: true } : o)),
+        })
+      } else if (offer.kind === 'voucher') {
+        let next: RunState = { ...run, money: run.money - offer.price, vouchers: [...run.vouchers, offer.voucherId] }
+        if (offer.voucherId === 'expansion') next = { ...next, jokerSlots: next.jokerSlots + 1 }
+        if (offer.voucherId === 'satchel') next = { ...next, consumableSlots: next.consumableSlots + 1 }
+        sfx.buy()
+        set({
+          run: next,
           shopOffers: shopOffers.map((o) => (o.slot === slot ? { ...o, sold: true } : o)),
         })
       } else {
@@ -393,6 +499,7 @@ export const useGame = create<GameStore>((set, get) => {
           nextRun = out.run
           pack = { type: 'joker', choices: out.choices }
         }
+        sfx.buy()
         set({
           run: nextRun,
           pack,
@@ -405,16 +512,17 @@ export const useGame = create<GameStore>((set, get) => {
     reroll: () => {
       const { run, rerolls, shopOffers } = get()
       if (!run) return
-      const cost = rerollCost(rerolls)
+      const cost = rerollCost(run, rerolls)
       if (run.money < cost) {
         say('Not enough money to reroll')
         return
       }
+      sfx.click()
       const { offers } = generateShop(run, rerolls + 1)
-      // keep sold + pack slots from current shop
+      // keep sold offers + pack/voucher slots from the current shop
       const merged = offers.map((o) => {
         const existing = shopOffers.find((e) => e.slot === o.slot)
-        if (existing && (existing.kind === 'pack' || existing.sold)) return existing
+        if (existing && (existing.kind === 'pack' || existing.kind === 'voucher' || existing.sold)) return existing
         return o
       })
       set({ run: { ...run, money: run.money - cost }, rerolls: rerolls + 1, shopOffers: merged })
@@ -443,7 +551,7 @@ export const useGame = create<GameStore>((set, get) => {
       } else {
         const jokerId = pack.choices[index]
         if (!jokerId) return
-        if (run.jokers.length >= run.jokerSlots) {
+        if (run.jokers.filter((j) => j.edition !== 'negative').length >= run.jokerSlots) {
           say('Joker slots are full — sell one first')
           return
         }
@@ -462,3 +570,6 @@ export const useGame = create<GameStore>((set, get) => {
     dismissResult: () => set({ roundResult: null }),
   }
 })
+
+// apply persisted audio preferences once at startup
+configureAudio(useGame.getState().settings)

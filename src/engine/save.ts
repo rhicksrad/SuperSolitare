@@ -4,11 +4,11 @@
 import type { RoundState } from './klondike'
 import type { RunState } from './types'
 
-const KEY = 'supersolitaire-v3'
+const KEY = 'supersolitaire-v3' // key kept stable; payload carries its own version
 const STATS_KEY = 'supersolitaire-stats-v1'
 
 export interface SavePayload {
-  version: 3
+  version: 3 | 4
   run: RunState
   round: RoundState | null
   screen: 'blind-select' | 'playing' | 'shop'
@@ -17,11 +17,24 @@ export interface SavePayload {
 
 export function saveGame(payload: Omit<SavePayload, 'version' | 'savedAt'>): void {
   try {
-    const full: SavePayload = { version: 3, savedAt: Date.now(), ...payload }
+    const full: SavePayload = { version: 4, savedAt: Date.now(), ...payload }
     localStorage.setItem(KEY, JSON.stringify(full))
   } catch {
     // storage full/unavailable — play on without persistence
   }
+}
+
+/** Fill fields introduced after a save was written */
+function migrate(payload: SavePayload): SavePayload {
+  const run = payload.run
+  run.vouchers ??= []
+  run.deckId ??= 'classic'
+  run.stake ??= 0
+  run.endless ??= false
+  if (payload.round) {
+    payload.round.curses ??= []
+  }
+  return { ...payload, version: 4 }
 }
 
 export function loadGame(): SavePayload | null {
@@ -29,8 +42,8 @@ export function loadGame(): SavePayload | null {
     const raw = localStorage.getItem(KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as SavePayload
-    if (parsed.version !== 3 || !parsed.run) return null
-    return parsed
+    if ((parsed.version !== 3 && parsed.version !== 4) || !parsed.run) return null
+    return migrate(parsed)
   } catch {
     return null
   }

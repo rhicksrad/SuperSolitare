@@ -12,34 +12,40 @@ const ENH_BADGE: Record<EnhancementId, string> = {
 export function CardView({
   card,
   enhancement,
+  cursed,
   selected,
   selectable,
   onClick,
   onDoubleClick,
   onDragStart,
   popIn,
+  trackId,
 }: {
   card: Card
   enhancement?: EnhancementId
+  cursed?: boolean
   selected?: boolean
   selectable?: boolean
   onClick?: (e: React.MouseEvent) => void
   onDoubleClick?: (e: React.MouseEvent) => void
   onDragStart?: (e: React.DragEvent) => void
   popIn?: boolean
+  /** set to enable FLIP move animation for this card */
+  trackId?: boolean
 }) {
   if (!card.faceUp) {
-    return <div className="card card-back" aria-label="Face-down card" />
+    return <div className="card card-back" aria-label="Face-down card" data-card-id={trackId ? card.id : undefined} />
   }
   const red = isRed(card.suit)
   return (
     <div
+      data-card-id={trackId ? card.id : undefined}
       className={[
         'card card-face',
         red ? 'red' : '',
         selectable ? 'card-selectable cursor-pointer' : '',
         selected ? 'card-selected' : '',
-        enhancement ? `enh-${enhancement}` : '',
+        cursed ? 'enh-cursed' : enhancement ? `enh-${enhancement}` : '',
         popIn ? 'card-pop-in' : '',
       ].join(' ')}
       role="button"
@@ -63,23 +69,29 @@ export function CardView({
       >
         {SUIT_GLYPH[card.suit]}
       </div>
-      {enhancement && (
-        <div
-          className="absolute bottom-[4%] right-[8%] font-bold"
-          style={{
-            fontSize: 'calc(var(--card-w) * 0.2)',
-            color:
-              enhancement === 'gilded'
-                ? '#b8860b'
-                : enhancement === 'ruby'
-                  ? '#d43a4b'
-                  : enhancement === 'sapphire'
-                    ? '#3c74e0'
-                    : '#2fa35c',
-          }}
-        >
-          {ENH_BADGE[enhancement]}
+      {cursed ? (
+        <div className="absolute bottom-[4%] right-[8%] font-bold" style={{ fontSize: 'calc(var(--card-w) * 0.2)', color: '#8b3ff2' }}>
+          ☠
         </div>
+      ) : (
+        enhancement && (
+          <div
+            className="absolute bottom-[4%] right-[8%] font-bold"
+            style={{
+              fontSize: 'calc(var(--card-w) * 0.2)',
+              color:
+                enhancement === 'gilded'
+                  ? '#b8860b'
+                  : enhancement === 'ruby'
+                    ? '#d43a4b'
+                    : enhancement === 'sapphire'
+                      ? '#3c74e0'
+                      : '#2fa35c',
+            }}
+          >
+            {ENH_BADGE[enhancement]}
+          </div>
+        )
       )}
     </div>
   )

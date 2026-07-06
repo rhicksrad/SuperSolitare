@@ -92,6 +92,22 @@ const defs: GodDef[] = [
     kind: 'instant',
     cost: 3,
   },
+  {
+    id: 'artemis',
+    name: 'Artemis',
+    title: 'The Huntress',
+    description: 'Burn the entire waste pile — every card, no discard cost',
+    kind: 'instant',
+    cost: 5,
+  },
+  {
+    id: 'hecate',
+    name: 'Hecate',
+    title: 'Mistress of Crossroads',
+    description: 'Cleanse all curses this round and gain +1 discard',
+    kind: 'instant',
+    cost: 4,
+  },
 ]
 
 export const godRegistry: Record<string, GodDef> = Object.fromEntries(defs.map((d) => [d.id, d]))

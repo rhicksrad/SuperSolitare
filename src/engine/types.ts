@@ -7,6 +7,15 @@ import type { RngState } from './rng'
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary'
 
+/** Joker editions — rolled in the shop, self-contained bonuses */
+export type Edition = 'foil' | 'holo' | 'negative'
+
+export const EDITION_META: Record<Edition, { name: string; description: string; priceBump: number }> = {
+  foil: { name: 'Foil', description: '+30 chips on every foundation play', priceBump: 3 },
+  holo: { name: 'Holographic', description: '+4 mult on every foundation play', priceBump: 5 },
+  negative: { name: 'Negative', description: 'Does not use a joker slot', priceBump: 8 },
+}
+
 // ---------------------------------------------------------------------------
 // Scoring levels ("god-blessed" play categories — the planet-card analog)
 
@@ -21,6 +30,7 @@ export type Levels = Record<PlayCategory, number>
 export interface JokerInstance {
   id: string
   state: Record<string, number>
+  edition?: Edition
 }
 
 /** Accumulator passed through the foundation-play scoring pipeline */
@@ -60,6 +70,7 @@ export interface JokerDef {
     onFoundationPlay?: (ctx: PlayContext) => HookResult | void
     onReveal?: (ctx: PlayContext) => HookResult | void
     onEmptyColumn?: (ctx: PlayContext) => HookResult | void
+    onDiscard?: (ctx: PlayContext) => HookResult | void
     onRoundEnd?: (round: RoundState, run: RunState, state: Record<string, number>) => HookResult | void
   }
   /** applied when a round starts */
@@ -112,6 +123,65 @@ export interface BossDef {
   silencesFirstJoker?: boolean
   /** score penalty per stock deal */
   dealPenalty?: number
+  /** money cost per stock deal / recycle */
+  moneyPerDeal?: number
+  /** curses N random deck cards for the round (0 chips, −2 mult) */
+  cursesCards?: number
+  /** card enhancements and joker editions do not trigger */
+  mutesEnhancements?: boolean
+  /** winning pays no base blind reward, only bonuses */
+  mutesBlindReward?: boolean
+  /** only appears as the ante-8 finisher */
+  finisher?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Vouchers — permanent run upgrades sold one-per-ante in the shop
+
+export interface VoucherDef {
+  id: string
+  name: string
+  description: string
+  cost: number
+}
+
+// ---------------------------------------------------------------------------
+// Decks — starting loadouts chosen at run start
+
+export interface DeckDef {
+  id: string
+  name: string
+  description: string
+  startMoney?: number
+  interestCapBonus?: number
+  shopDiscount?: number
+  startVoucher?: boolean
+  startEnhancedCards?: number
+  /** streak survives recycles (not stock deals) */
+  serpentStreak?: boolean
+  targetMult?: number
+}
+
+// ---------------------------------------------------------------------------
+// Stakes — difficulty tiers
+
+export interface StakeDef {
+  level: number
+  name: string
+  description: string
+  targetMult: number
+  rewardPenalty: number
+}
+
+// ---------------------------------------------------------------------------
+// Skip tags — the visible reward for skipping a small/big blind
+
+export type TagKind = 'money' | 'god' | 'joker' | 'enhance' | 'surplus'
+
+export interface SkipTag {
+  kind: TagKind
+  name: string
+  description: string
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +189,7 @@ export interface BossDef {
 
 export interface RunState {
   seed: string
-  ante: number // 1..8, 9 = victory
+  ante: number // 1..8 (9+ = endless)
   blindIndex: number // 0 small, 1 big, 2 boss
   money: number
   jokers: JokerInstance[]
@@ -128,14 +198,20 @@ export interface RunState {
   consumableSlots: number
   enhancements: EnhancementMap
   levels: Levels
-  /** boss id per ante, rolled at run start so players can plan */
+  /** boss id per ante, rolled at run start (extended lazily in endless) */
   bosses: string[]
+  vouchers: string[]
+  deckId: string
+  stake: number // 0 white, 1 red, 2 gold
+  endless: boolean
   rng: RngState
   history: Array<{ ante: number; blind: BlindKind; score: number; target: number }>
   skips: number
   roundsWon: number
   bestPlay: number
   mode: 'standard' | 'daily'
+  /** set by the Surplus skip tag; consumed by the next startRound */
+  pendingSurplus?: boolean
 }
 
 export const BLINDS: readonly BlindKind[] = ['small', 'big', 'boss']

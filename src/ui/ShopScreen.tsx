@@ -2,9 +2,11 @@ import { RANK_LABEL, SUIT_GLYPH, ENHANCEMENTS } from '../engine/cards'
 import { godRegistry } from '../engine/gods'
 import { describeJoker, jokerRegistry, newJokerInstance } from '../engine/jokers'
 import { PACK_META, rerollCost } from '../engine/shop'
+import { EDITION_META } from '../engine/types'
+import { voucherRegistry } from '../engine/vouchers'
 import { useGame } from '../state/store'
 import { CardView } from './CardView'
-import { GodTray, JokerTray, LevelsBadge, MoneyBadge } from './Trays'
+import { GodTray, JokerTray, LevelsBadge, MoneyBadge, VoucherStrip } from './Trays'
 
 function ResultBanner() {
   const result = useGame((s) => s.roundResult)
@@ -102,14 +104,15 @@ export function ShopScreen() {
 
   return (
     <div className="min-h-screen max-w-5xl mx-auto px-4 py-6 flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <JokerTray />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <GodTray />
           <LevelsBadge />
           <MoneyBadge />
         </div>
       </div>
+      <VoucherStrip />
 
       <ResultBanner />
 
@@ -120,9 +123,9 @@ export function ShopScreen() {
             <button
               className="rounded-lg bg-slate-700/70 px-4 py-2 text-sm font-semibold hover:bg-slate-600/70 disabled:opacity-40"
               onClick={reroll}
-              disabled={run.money < rerollCost(rerolls)}
+              disabled={run.money < rerollCost(run, rerolls)}
             >
-              Reroll ${rerollCost(rerolls)}
+              Reroll ${rerollCost(run, rerolls)}
             </button>
             <button className="rounded-lg bg-[var(--gold)] text-slate-900 px-4 py-2 font-bold hover:brightness-110" onClick={leaveShop} data-testid="next-round">
               Next Round →
@@ -130,21 +133,49 @@ export function ShopScreen() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {shopOffers.map((offer) => {
             if (offer.kind === 'joker') {
               const def = jokerRegistry[offer.jokerId]
               return (
-                <div key={offer.slot} className={`panel p-3 flex flex-col rarity-${def.rarity} ${offer.sold ? 'opacity-40' : ''}`}>
+                <div
+                  key={offer.slot}
+                  className={`panel p-3 flex flex-col rarity-${def.rarity} ${offer.edition ? `edition-${offer.edition}` : ''} ${offer.sold ? 'opacity-40' : ''}`}
+                >
                   <div className="font-bold text-sm">{def.name}</div>
-                  <div className="text-[10px] text-slate-400 capitalize">{def.rarity} joker</div>
-                  <div className="text-xs text-slate-300 mt-1 flex-1">{describeJoker(newJokerInstance(def.id))}</div>
+                  <div className="text-[10px] text-slate-400 capitalize">
+                    {def.rarity} joker
+                    {offer.edition && (
+                      <span className={`ml-1 font-bold edition-text-${offer.edition}`}>· {EDITION_META[offer.edition].name}</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-300 mt-1 flex-1">
+                    {describeJoker(newJokerInstance(def.id))}
+                    {offer.edition && <div className="mt-1 text-slate-400">{EDITION_META[offer.edition].description}</div>}
+                  </div>
                   <button
                     className="mt-2 rounded-lg bg-[var(--gold)] text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => buyOffer(offer.slot)}
                     disabled={offer.sold || run.money < offer.price}
                   >
                     {offer.sold ? 'Sold' : `Buy $${offer.price}`}
+                  </button>
+                </div>
+              )
+            }
+            if (offer.kind === 'voucher') {
+              const def = voucherRegistry[offer.voucherId]
+              return (
+                <div key={offer.slot} className={`panel p-3 flex flex-col voucher-card ${offer.sold ? 'opacity-40' : ''}`}>
+                  <div className="font-bold text-sm text-purple-300">{def.name}</div>
+                  <div className="text-[10px] text-slate-400">voucher · permanent</div>
+                  <div className="text-xs text-slate-300 mt-1 flex-1">{def.description}</div>
+                  <button
+                    className="mt-2 rounded-lg bg-purple-400 text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                    onClick={() => buyOffer(offer.slot)}
+                    disabled={offer.sold || run.money < offer.price}
+                  >
+                    {offer.sold ? 'Redeemed' : `Buy $${offer.price}`}
                   </button>
                 </div>
               )
@@ -184,7 +215,7 @@ export function ShopScreen() {
           })}
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          Sell jokers from the tray above · packs stay through rerolls · interest pays $1 per $5 held (max $5)
+          Sell jokers from the tray above · packs and vouchers stay through rerolls · interest pays $1 per $5 held
         </p>
       </div>
 

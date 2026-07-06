@@ -15,6 +15,8 @@ export interface RoundRules {
   discards: number // top-of-waste burns allowed
   /** Boss/joker flag: tableau stacking ignores color */
   anyColorStacking?: boolean
+  /** how many waste cards are shown face-up (boss: the-fog shows 1) */
+  wasteVisible?: number
 }
 
 export type BlindKind = 'small' | 'big' | 'boss'
@@ -42,6 +44,8 @@ export interface RoundState {
   }
   /** one-shot ×2-mult charges from consumables/jokers */
   boostCharges: number
+  /** card ids cursed for this round (0 chips, −2 mult) — see boss: the-hex */
+  curses: string[]
   finished: boolean
 }
 
@@ -102,6 +106,7 @@ export function dealRound(
     burned: [],
     stats: { foundationPlays: 0, reveals: 0, emptiedColumns: 0, stockDeals: 0 },
     boostCharges: 0,
+    curses: [],
     finished: false,
   }
 }
@@ -209,6 +214,7 @@ function cloneState(s: RoundState): RoundState {
     waste: s.waste.map((c) => ({ ...c })),
     burned: s.burned.map((c) => ({ ...c })),
     stats: { ...s.stats },
+    curses: [...s.curses],
   }
 }
 

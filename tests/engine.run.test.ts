@@ -10,6 +10,7 @@ import {
   interestFor,
   newRun,
   skipBlind,
+  skipTagFor,
   startRound,
   applyGodCard,
 } from '../src/engine/run'
@@ -37,12 +38,20 @@ describe('run structure', () => {
 
   it('applies boss rules when starting a boss round', () => {
     let run = newRun('boss-round')
-    run = { ...run, blindIndex: 2 }
-    const droughtAnte = run.bosses.indexOf('the-drought') + 1
-    run = { ...run, ante: droughtAnte }
+    run = { ...run, blindIndex: 2, bosses: ['the-drought', ...run.bosses.slice(1)] }
     const { round } = startRound(run)
     expect(round.bossId).toBe('the-drought')
     expect(round.discardsLeft).toBe(0)
+  })
+
+  it('ante 8 always gets a finisher boss, and the-hex curses cards', () => {
+    const run = newRun('finisher')
+    expect(['the-house', 'the-reaper', 'the-eclipse']).toContain(run.bosses[7])
+
+    let hexRun = newRun('hex')
+    hexRun = { ...hexRun, blindIndex: 2, bosses: ['the-hex', ...hexRun.bosses.slice(1)] }
+    const { round } = startRound(hexRun)
+    expect(round.curses).toHaveLength(5)
   })
 
   it('advances blinds and antes on wins, pays interest, and detects run win', () => {
@@ -82,12 +91,22 @@ describe('run structure', () => {
     expect(result.breakdown.some((b) => b.label === 'Golden Joker' && b.amount === 4)).toBe(true)
   })
 
-  it('skipping a blind grants a god card and advances', () => {
+  it('skipping a blind advances and applies the visible tag', () => {
     const run = newRun('skip')
-    const { run: after, godId } = skipBlind(run)
+    const { run: after, tag, message } = skipBlind(run)
     expect(after.blindIndex).toBe(1)
-    expect(godId).toBeTruthy()
-    expect(after.consumables).toContain(godId)
+    expect(tag).toBeTruthy()
+    expect(message.length).toBeGreaterThan(0)
+    // the tag shown before skipping matches what skipBlind rolls
+    expect(skipTagFor(run, 0).kind).toBe(tag!.kind)
+    // skipping granted *something*: money, a god, a joker, enhancements, or surplus
+    const gainedSomething =
+      after.money > run.money ||
+      after.consumables.length > run.consumables.length ||
+      after.jokers.length > run.jokers.length ||
+      Object.keys(after.enhancements).length > Object.keys(run.enhancements).length ||
+      after.pendingSurplus === true
+    expect(gainedSomething).toBe(true)
   })
 })
 
@@ -138,9 +157,13 @@ describe('shop', () => {
     expect(packsC).toEqual(packsA)
   })
 
-  it('reroll cost escalates', () => {
-    expect(rerollCost(0)).toBe(4)
-    expect(rerollCost(2)).toBe(6)
+  it('reroll cost escalates, and grease-fingers discounts it', () => {
+    const run = newRun('rr')
+    expect(rerollCost(run, 0)).toBe(4)
+    expect(rerollCost(run, 2)).toBe(6)
+    const discounted = { ...run, vouchers: ['grease-fingers'] }
+    expect(rerollCost(discounted, 0)).toBe(2)
+    expect(rerollCost(discounted, 10)).toBe(12)
   })
 
   it('packs offer 3 valid choices', () => {

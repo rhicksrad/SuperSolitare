@@ -1,8 +1,9 @@
 // Run orchestration: antes, blind targets, round creation, cash-out economy,
 // and god-card effects. Pure functions over RunState/RoundState.
 
-import { bossRegistry } from './bosses'
+import { allBossIds, bossRegistry, finisherBossIds } from './bosses'
 import { buildDeck, rollEnhancement } from './cards'
+import { deckRegistry, STAKES } from './decks'
 import { godRegistry } from './gods'
 import { jokerRegistry } from './jokers'
 import { dealRound, foundationFor } from './klondike'
@@ -10,13 +11,16 @@ import type { BlindKind, RoundRules, RoundState } from './klondike'
 import { Rng } from './rng'
 import { performMove, runHasPassive } from './scoring'
 import type { ScorePop } from './scoring'
-import type { RunState } from './types'
-import { allBossIds } from './bosses'
+import type { RunState, SkipTag, TagKind } from './types'
+import { allVoucherIds, hasVoucher } from './vouchers'
 
 export const FINAL_ANTE = 8
 
 /** Base target per ante; small = 1×, big = 1.4×, boss = 2× (× boss targetMult) */
 export const ANTE_BASE_TARGETS = [0, 300, 800, 1700, 3000, 5000, 7500, 11000, 16000]
+
+/** Endless: each ante past 8 multiplies the ante-8 base by this */
+export const ENDLESS_GROWTH = 1.6
 
 export const BLIND_MULT: Record<BlindKind, number> = { small: 1, big: 1.4, boss: 2 }
 
@@ -27,36 +31,61 @@ export const INTEREST_CAP = 5
 
 export const BASE_RULES: RoundRules = { dealSize: 3, recycles: 2, discards: 3 }
 
+export function anteBase(ante: number): number {
+  if (ante <= FINAL_ANTE) return ANTE_BASE_TARGETS[Math.max(1, ante)]
+  return Math.round(ANTE_BASE_TARGETS[FINAL_ANTE] * Math.pow(ENDLESS_GROWTH, ante - FINAL_ANTE))
+}
+
 export function blindTarget(run: RunState, ante: number, blind: BlindKind): number {
-  const base = ANTE_BASE_TARGETS[Math.min(ante, ANTE_BASE_TARGETS.length - 1)]
-  let target = base * BLIND_MULT[blind]
+  let target = anteBase(ante) * BLIND_MULT[blind]
   if (blind === 'boss') {
     const boss = bossRegistry[run.bosses[ante - 1]]
     if (boss?.targetMult) target *= boss.targetMult
   }
+  target *= STAKES[run.stake]?.targetMult ?? 1
+  target *= deckRegistry[run.deckId]?.targetMult ?? 1
   return Math.round(target)
 }
 
-export function newRun(seed: string, mode: 'standard' | 'daily' = 'standard'): RunState {
+export function newRun(
+  seed: string,
+  mode: 'standard' | 'daily' = 'standard',
+  deckId = 'classic',
+  stake = 0,
+): RunState {
   const rng = new Rng(`${seed}::run`)
+  const deck = deckRegistry[deckId] ?? deckRegistry.classic
   const bosses: string[] = []
   let bag: string[] = []
-  for (let a = 0; a < FINAL_ANTE; a++) {
+  for (let a = 0; a < FINAL_ANTE - 1; a++) {
     if (bag.length === 0) bag = rng.shuffle(allBossIds)
     bosses.push(bag.pop()!)
   }
+  bosses.push(rng.pick(finisherBossIds)) // ante 8 gets a finisher
+
+  const enhancements: RunState['enhancements'] = {}
+  if (deck.startEnhancedCards) {
+    const cards = rng.shuffle(buildDeck()).slice(0, deck.startEnhancedCards)
+    for (const c of cards) enhancements[c.id] = rollEnhancement(rng)
+  }
+  const vouchers: string[] = deck.startVoucher ? [rng.pick(allVoucherIds)] : []
+
   return {
     seed,
     ante: 1,
     blindIndex: 0,
-    money: 4,
+    money: deck.startMoney ?? 4,
     jokers: [],
     jokerSlots: 5,
     consumables: [],
     consumableSlots: 2,
-    enhancements: {},
+    enhancements,
     levels: { foundation: 1, reveal: 1, empty_column: 1 },
     bosses,
+    vouchers,
+    deckId: deck.id,
+    stake,
+    endless: false,
     rng: rng.state,
     history: [],
     skips: 0,
@@ -64,6 +93,18 @@ export function newRun(seed: string, mode: 'standard' | 'daily' = 'standard'): R
     bestPlay: 0,
     mode,
   }
+}
+
+/** Endless mode rolls bosses lazily for antes past 8 */
+export function ensureBossForAnte(run: RunState, ante: number): RunState {
+  if (run.bosses.length >= ante) return run
+  const rng = new Rng(run.rng)
+  const bosses = [...run.bosses]
+  while (bosses.length < ante) {
+    const pool = bosses.length % 4 === 3 ? finisherBossIds : allBossIds
+    bosses.push(rng.pick(pool))
+  }
+  return { ...run, bosses, rng: rng.state }
 }
 
 export function currentBlind(run: RunState): BlindKind {
@@ -85,6 +126,14 @@ export function startRound(run: RunState): { round: RoundState; run: RunState } 
     if (mods.dealSize) rules.dealSize = mods.dealSize
   }
   if (runHasPassive(run, null, 'anyColorStacking')) rules.anyColorStacking = true
+  // Voucher round modifiers
+  if (hasVoucher(run.vouchers, 'crowbar')) rules.discards += 1
+  if (hasVoucher(run.vouchers, 'perpetual-motion')) rules.recycles += 1
+  // Surplus skip tag
+  if (run.pendingSurplus) {
+    rules.recycles += 1
+    rules.discards += 2
+  }
   if (boss?.modifyRules) rules = boss.modifyRules(rules)
 
   const target = blindTarget(run, run.ante, blind)
@@ -95,7 +144,12 @@ export function startRound(run: RunState): { round: RoundState; run: RunState } 
     bossId,
     target,
   })
-  return { round, run: { ...run, rng: rng.state } }
+  // The Hex: curse random deck cards for this round
+  if (boss?.cursesCards) {
+    const cursed = rng.derive(`hex-${run.ante}`).shuffle(buildDeck()).slice(0, boss.cursesCards)
+    round.curses = cursed.map((c) => c.id)
+  }
+  return { round, run: { ...run, rng: rng.state, pendingSurplus: false } }
 }
 
 // ---------------------------------------------------------------------------
@@ -110,8 +164,18 @@ export interface RoundResult {
   runWon: boolean
 }
 
-export function interestFor(money: number): number {
-  return Math.min(INTEREST_CAP, Math.floor(money / INTEREST_STEP))
+export function interestFor(money: number, cap = INTEREST_CAP): number {
+  return Math.min(cap, Math.floor(money / INTEREST_STEP))
+}
+
+export function interestCapFor(run: RunState): number {
+  let cap = INTEREST_CAP + (deckRegistry[run.deckId]?.interestCapBonus ?? 0)
+  if (hasVoucher(run.vouchers, 'deep-pockets')) cap = Math.max(cap, 10)
+  return cap
+}
+
+export function interestForRun(run: RunState): number {
+  return interestFor(run.money, interestCapFor(run))
 }
 
 /**
@@ -124,18 +188,26 @@ export function finishRound(run: RunState, round: RoundState): { run: RunState; 
   const breakdown: Array<{ label: string; amount: number }> = []
   let reward = 0
 
+  const boss = round.bossId ? bossRegistry[round.bossId] : null
   if (won) {
-    reward += BLIND_REWARD[blind]
-    breakdown.push({ label: `${blind === 'boss' ? 'Boss' : blind === 'big' ? 'Big' : 'Small'} blind`, amount: BLIND_REWARD[blind] })
+    if (!boss?.mutesBlindReward) {
+      const stakePenalty = STAKES[run.stake]?.rewardPenalty ?? 0
+      const tithe = hasVoucher(run.vouchers, 'tithe') ? 2 : 0
+      const base = Math.max(1, BLIND_REWARD[blind] - stakePenalty + tithe)
+      reward += base
+      breakdown.push({ label: `${blind === 'boss' ? 'Boss' : blind === 'big' ? 'Big' : 'Small'} blind`, amount: base })
+    } else {
+      breakdown.push({ label: `${boss.name} devours the reward`, amount: 0 })
+    }
     const unused = Math.min(3, round.discardsLeft)
     if (unused > 0) {
       reward += unused
       breakdown.push({ label: `Unused discards (${unused})`, amount: unused })
     }
-    const interest = interestFor(run.money)
+    const interest = interestForRun(run)
     if (interest > 0) {
       reward += interest
-      breakdown.push({ label: `Interest ($1 per $${INTEREST_STEP}, max $${INTEREST_CAP})`, amount: interest })
+      breakdown.push({ label: `Interest ($1 per $${INTEREST_STEP})`, amount: interest })
     }
     // Joker round-end money
     for (const j of run.jokers) {
@@ -156,11 +228,11 @@ export function finishRound(run: RunState, round: RoundState): { run: RunState; 
   if (won) {
     next.roundsWon = run.roundsWon + 1
     if (blind === 'boss') {
-      if (run.ante >= FINAL_ANTE) {
-        runWon = true
-        next = { ...next, ante: run.ante + 1 }
-      } else {
+      if (run.ante >= FINAL_ANTE && !run.endless) {
+        runWon = true // victory screen offers Endless from here
         next = { ...next, ante: run.ante + 1, blindIndex: 0 }
+      } else {
+        next = ensureBossForAnte({ ...next, ante: run.ante + 1, blindIndex: 0 }, run.ante + 1)
       }
     } else {
       next = { ...next, blindIndex: run.blindIndex + 1 }
@@ -173,22 +245,89 @@ export function finishRound(run: RunState, round: RoundState): { run: RunState; 
   }
 }
 
-/** Skip a small/big blind for a random god card ("an omen") */
-export function skipBlind(run: RunState): { run: RunState; godId: string | null } {
-  if (currentBlind(run) === 'boss') return { run, godId: null }
-  const rng = new Rng(run.rng)
-  let godId: string | null = null
-  if (run.consumables.length < run.consumableSlots) {
-    godId = rng.pick(Object.keys(godRegistry))
+// ---------------------------------------------------------------------------
+// Skip tags — shown on the blind card before you commit to skipping
+
+const TAG_KINDS: TagKind[] = ['money', 'god', 'joker', 'enhance', 'surplus']
+
+/** Deterministic per ante+blind so the player can see it before skipping */
+export function skipTagFor(run: RunState, blindIndex: number): SkipTag {
+  const rng = new Rng(`${run.seed}::tag-${run.ante}-${blindIndex}`)
+  const kind = rng.pick(TAG_KINDS)
+  switch (kind) {
+    case 'money':
+      return { kind, name: 'Coin Tag', description: 'Gain $7' }
+    case 'god':
+      return { kind, name: 'Omen Tag', description: 'Gain a random god card' }
+    case 'joker':
+      return { kind, name: 'Wildcard Tag', description: 'Gain a random common joker' }
+    case 'enhance':
+      return { kind, name: 'Forge Tag', description: 'Enhance 2 random cards in your deck' }
+    case 'surplus':
+      return { kind, name: 'Surplus Tag', description: '+1 recycle and +2 discards next round' }
   }
-  const next: RunState = {
+}
+
+export function skipBlind(run: RunState): { run: RunState; tag: SkipTag | null; message: string } {
+  if (currentBlind(run) === 'boss') return { run, tag: null, message: 'Bosses cannot be skipped' }
+  const tag = skipTagFor(run, run.blindIndex)
+  const rng = new Rng(run.rng)
+  let next: RunState = {
     ...run,
     blindIndex: run.blindIndex + 1,
     skips: run.skips + 1,
-    consumables: godId ? [...run.consumables, godId] : run.consumables,
     rng: rng.state,
   }
-  return { run: next, godId }
+  let message = tag.description
+  switch (tag.kind) {
+    case 'money':
+      next = { ...next, money: next.money + 7 }
+      message = '+$7'
+      break
+    case 'god': {
+      if (next.consumables.length < next.consumableSlots) {
+        const godId = rng.pick(Object.keys(godRegistry))
+        next = { ...next, consumables: [...next.consumables, godId], rng: rng.state }
+        message = `The fates grant ${godRegistry[godId].name}`
+      } else {
+        next = { ...next, money: next.money + 4 }
+        message = 'God slots full — $4 instead'
+      }
+      break
+    }
+    case 'joker': {
+      const commons = Object.values(jokerRegistry).filter(
+        (d) => d.rarity === 'common' && !next.jokers.some((j) => j.id === d.id),
+      )
+      const slotsUsed = next.jokers.filter((j) => j.edition !== 'negative').length
+      if (commons.length > 0 && slotsUsed < next.jokerSlots) {
+        const def = rng.pick(commons)
+        next = { ...next, jokers: [...next.jokers, { id: def.id, state: {} }], rng: rng.state }
+        message = `${def.name} joins your crew`
+      } else {
+        next = { ...next, money: next.money + 4 }
+        message = 'No room for a joker — $4 instead'
+      }
+      break
+    }
+    case 'enhance': {
+      const unenhanced = rng.shuffle(buildDeck().filter((c) => !next.enhancements[c.id])).slice(0, 2)
+      const enhancements = { ...next.enhancements }
+      const named: string[] = []
+      for (const c of unenhanced) {
+        enhancements[c.id] = rollEnhancement(rng)
+        named.push(`${c.id} → ${enhancements[c.id]}`)
+      }
+      next = { ...next, enhancements, rng: rng.state }
+      message = named.join(', ') || 'Every card is already enhanced'
+      break
+    }
+    case 'surplus':
+      next = { ...next, pendingSurplus: true }
+      message = '+1 recycle and +2 discards next round'
+      break
+  }
+  return { run: next, tag, message }
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +435,27 @@ export function applyGodCard(run: RunState, round: RoundState | null, godId: str
       const gain = rng.range(3, 8)
       const next = consume({ ...run, money: run.money + gain, rng: rng.state })
       return { run: next, round, message: `+$${gain}`, ok: true }
+    }
+    case 'artemis': {
+      if (!round) return { run, round, message: 'Only usable during a round', ok: false }
+      if (round.waste.length === 0) return { run, round, message: 'The waste is already empty', ok: false }
+      const burned = [...round.burned, ...round.waste.map((c) => ({ ...c }))]
+      const count = round.waste.length
+      const nextRound = { ...round, waste: [], burned }
+      const onFoundations = nextRound.foundations.reduce((n, p) => n + p.length, 0)
+      if (onFoundations + nextRound.burned.length === 52) nextRound.finished = true
+      return { run: consume(run), round: nextRound, message: `Artemis burns ${count} card${count === 1 ? '' : 's'}`, ok: true }
+    }
+    case 'hecate': {
+      if (!round) return { run, round, message: 'Only usable during a round', ok: false }
+      const hadCurses = round.curses.length
+      const nextRound = { ...round, curses: [], discardsLeft: round.discardsLeft + 1 }
+      return {
+        run: consume(run),
+        round: nextRound,
+        message: hadCurses > 0 ? `${hadCurses} curse${hadCurses === 1 ? '' : 's'} cleansed, +1 discard` : '+1 discard',
+        ok: true,
+      }
     }
     default:
       return { run, round, message: 'Unknown card', ok: false }

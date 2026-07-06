@@ -1,9 +1,32 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { bossRegistry } from '../engine/bosses'
 import { foundationLevelBase } from '../engine/scoring'
 import { useGame } from '../state/store'
 import { Board } from './Board'
 import { GodTray, JokerTray, MoneyBadge } from './Trays'
+
+/** Roll a displayed number toward its target over ~350ms */
+function useCountUp(value: number): number {
+  const [shown, setShown] = useState(value)
+  const target = useRef(value)
+  const raf = useRef<number>(0)
+  useEffect(() => {
+    target.current = value
+    const start = performance.now()
+    const from = shown
+    if (from === value) return
+    const step = (t: number) => {
+      const k = Math.min(1, (t - start) / 350)
+      const eased = 1 - Math.pow(1 - k, 3)
+      setShown(Math.round(from + (target.current - from) * eased))
+      if (k < 1) raf.current = requestAnimationFrame(step)
+    }
+    raf.current = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+  return shown
+}
 
 function Sidebar() {
   const round = useGame((s) => s.round)!
@@ -17,6 +40,7 @@ function Sidebar() {
   const boss = round.bossId ? bossRegistry[round.bossId] : null
   const base = foundationLevelBase(run.levels.foundation)
   const blindName = round.blind === 'small' ? 'Small Blind' : round.blind === 'big' ? 'Big Blind' : boss?.name ?? 'Boss Blind'
+  const shownScore = useCountUp(round.score)
 
   return (
     <div className="flex flex-col gap-3 w-56 shrink-0">
@@ -27,11 +51,11 @@ function Sidebar() {
         <div className="text-2xl font-bold big-number text-slate-100">{round.target.toLocaleString()}</div>
         <div className="mt-2 text-xs text-slate-400">Round score</div>
         <div
-          key={round.score}
-          className={`text-4xl font-extrabold big-number score-flash ${won ? 'text-[var(--gold)]' : 'text-slate-50'}`}
+          className={`text-4xl font-extrabold big-number ${won ? 'text-[var(--gold)]' : 'text-slate-50'}`}
           data-testid="round-score"
+          data-score={round.score}
         >
-          {round.score.toLocaleString()}
+          {shownScore.toLocaleString()}
         </div>
         <div className="mt-2 h-2 rounded bg-slate-700/60 overflow-hidden">
           <div
@@ -145,6 +169,11 @@ export function GameScreen() {
   const clickStock = useGame((s) => s.clickStock)
   const discardWaste = useGame((s) => s.discardWaste)
   const round = useGame((s) => s.round)
+  const pops = useGame((s) => s.pops)
+  const reduceMotion = useGame((s) => s.settings.reduceMotion)
+  const bigPop = reduceMotion
+    ? undefined
+    : pops.find((p) => p.kind === 'clear' || (p.kind === 'foundation' && ((p.mult ?? 0) >= 12 || p.total >= 400)))
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -173,7 +202,7 @@ export function GameScreen() {
       </div>
       <div className="flex gap-6 items-start">
         <Sidebar />
-        <div className="flex-1 relative">
+        <div key={bigPop?.uid} className={`flex-1 relative ${bigPop ? 'shake' : ''}`}>
           <PopLayer />
           <Board />
         </div>

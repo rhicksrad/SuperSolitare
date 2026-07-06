@@ -1,8 +1,38 @@
+import { useLayoutEffect, useRef } from 'react'
 import { useGame } from '../state/store'
 import type { Selection } from '../state/store'
 import type { FoundationId, TableauId } from '../engine/klondike'
 import { SUIT_GLYPH, SUITS } from '../engine/cards'
 import { CardView } from './CardView'
+
+/**
+ * FLIP: after every render, any element with data-card-id that moved since the
+ * previous render animates from its old position. Works across piles because
+ * ids are stable for the whole run.
+ */
+function useFlipCards(enabled: boolean) {
+  const rects = useRef<Map<string, DOMRect>>(new Map())
+  useLayoutEffect(() => {
+    const next = new Map<string, DOMRect>()
+    document.querySelectorAll<HTMLElement>('[data-card-id]').forEach((el) => {
+      const id = el.dataset.cardId!
+      const rect = el.getBoundingClientRect()
+      next.set(id, rect)
+      if (!enabled) return
+      const prev = rects.current.get(id)
+      if (prev && (Math.abs(prev.left - rect.left) > 2 || Math.abs(prev.top - rect.top) > 2)) {
+        el.animate(
+          [
+            { transform: `translate(${prev.left - rect.left}px, ${prev.top - rect.top}px)`, zIndex: '50' },
+            { transform: 'translate(0, 0)', zIndex: '50' },
+          ],
+          { duration: 190, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)' },
+        )
+      }
+    })
+    rects.current = next
+  })
+}
 
 function sameSel(a: Selection | null, b: Selection): boolean {
   if (!a) return false
@@ -30,7 +60,8 @@ function StockAndWaste() {
   const enhancements = useGame((s) => s.run?.enhancements) ?? {}
 
   const wasteTop = round.waste.length - 1
-  const fan = round.waste.slice(Math.max(0, round.waste.length - 3))
+  const visible = Math.max(1, round.rules.wasteVisible ?? 3)
+  const fan = round.waste.slice(Math.max(0, round.waste.length - visible))
 
   return (
     <div className="flex gap-3 items-start">
@@ -60,9 +91,11 @@ function StockAndWaste() {
               <CardView
                 card={card}
                 enhancement={enhancements[card.id]}
+                cursed={round.curses.includes(card.id)}
                 selectable={isTop}
                 selected={isTop && sameSel(selection, sel)}
                 popIn={isTop && globalIndex === wasteTop}
+                trackId
                 onClick={isTop ? () => select(sameSel(selection, sel) ? null : sel) : undefined}
                 onDoubleClick={isTop ? () => autoToFoundation(sel) : undefined}
                 onDragStart={isTop ? () => select(sel) : undefined}
@@ -115,7 +148,7 @@ function FoundationPile({
       aria-label={`Foundation ${Number(id[1]) + 1}, ${count} cards`}
     >
       {top ? (
-        <CardView card={{ ...top, faceUp: true }} enhancement={enhancement} popIn />
+        <CardView card={{ ...top, faceUp: true }} enhancement={enhancement} popIn trackId />
       ) : (
         <div className="pile-slot flex items-center justify-center text-3xl text-slate-500/60">
           {SUIT_GLYPH[SUITS[Number(id[1])]]}
@@ -172,8 +205,10 @@ function TableauColumn({ col }: { col: number }) {
             <CardView
               card={card}
               enhancement={enhancements[card.id]}
+              cursed={round.curses.includes(card.id)}
               selectable={card.faceUp}
               selected={isSelected}
+              trackId
               onClick={
                 card.faceUp
                   ? (e) => {
@@ -202,6 +237,8 @@ function TableauColumn({ col }: { col: number }) {
 
 export function Board() {
   const select = useGame((s) => s.select)
+  const reduceMotion = useGame((s) => s.settings.reduceMotion)
+  useFlipCards(!reduceMotion)
   return (
     <div className="flex flex-col gap-5" onClick={() => select(null)} data-testid="board">
       <div className="flex justify-between items-start" onClick={(e) => e.stopPropagation()}>

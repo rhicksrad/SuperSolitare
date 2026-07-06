@@ -1,8 +1,7 @@
 import { bossRegistry } from '../engine/bosses'
-import { godRegistry } from '../engine/gods'
-import { blindTarget, BLIND_REWARD } from '../engine/run'
+import { blindTarget, BLIND_REWARD, FINAL_ANTE, skipTagFor } from '../engine/run'
 import { useGame } from '../state/store'
-import { GodTray, JokerTray, LevelsBadge, MoneyBadge } from './Trays'
+import { GodTray, JokerTray, LevelsBadge, MoneyBadge, VoucherStrip } from './Trays'
 
 const BLIND_LABEL = ['Small Blind', 'Big Blind', 'Boss Blind']
 
@@ -18,23 +17,31 @@ export function BlindSelect() {
 
   return (
     <div className="min-h-screen max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <JokerTray />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <GodTray />
           <LevelsBadge />
           <MoneyBadge />
         </div>
       </div>
+      <VoucherStrip />
 
       <div className="text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight">Ante {run.ante} of 8</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {run.ante > FINAL_ANTE ? (
+            <>
+              Endless · Ante {run.ante}
+              <span className="ml-2 text-base align-middle" style={{ color: 'var(--gold)' }}>
+                ∞
+              </span>
+            </>
+          ) : (
+            <>Ante {run.ante} of {FINAL_ANTE}</>
+          )}
+        </h1>
         <p className="text-slate-400 mt-1">Beat all three blinds to advance</p>
-        {skipReward && (
-          <p className="mt-2 text-emerald-300 text-sm">
-            Skipped! The fates granted you {godRegistry[skipReward]?.name ?? skipReward}.
-          </p>
-        )}
+        {skipReward && <p className="mt-2 text-emerald-300 text-sm">Skipped! {skipReward}</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -72,8 +79,12 @@ export function BlindSelect() {
                     className="rounded-lg bg-slate-700/70 px-3 py-2 text-sm font-semibold hover:bg-slate-600/70 has-tip"
                     onClick={skipCurrentBlind}
                   >
-                    Skip
-                    <span className="tip">Skip this blind and receive a random god card (no reward money)</span>
+                    Skip · {skipTagFor(run, idx).name}
+                    <span className="tip">
+                      <span className="font-bold">{skipTagFor(run, idx).name}</span>
+                      <br />
+                      {skipTagFor(run, idx).description} (no reward money)
+                    </span>
                   </button>
                 )}
                 {isPast && <div className="flex-1 text-center text-emerald-300 font-bold py-2">✓ Beaten</div>}

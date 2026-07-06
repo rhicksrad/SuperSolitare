@@ -65,8 +65,68 @@ const defs: BossDef[] = [
     description: 'Reveals and emptied columns score nothing',
     mutesCategory: ['reveal', 'empty_column'],
   },
+  {
+    id: 'the-hex',
+    name: 'The Hex',
+    description: 'Curses 5 of your cards for this round: 0 chips, −2 mult',
+    cursesCards: 5,
+  },
+  {
+    id: 'the-fog',
+    name: 'The Fog',
+    description: 'Only the top waste card is visible',
+    modifyRules: (rules) => ({ ...rules, wasteVisible: 1 }),
+  },
+  {
+    id: 'the-anchor',
+    name: 'The Anchor',
+    description: 'Kings cannot move between tableau columns',
+    blocksMove: (move, round) => {
+      if (move.kind !== 'tableau_to_tableau') return null
+      const col = round.tableau[Number(move.from[1])]
+      return col[move.index]?.rank === 13 ? 'The Anchor holds your kings in place' : null
+    },
+  },
+  {
+    id: 'the-famine',
+    name: 'The Famine',
+    description: 'Winning pays no blind reward — only bonuses and interest',
+    mutesBlindReward: true,
+  },
+  {
+    id: 'the-tithe-boss',
+    name: 'The Usurer',
+    description: 'Each stock deal and recycle costs $1',
+    moneyPerDeal: 1,
+  },
+
+  // --- Ante 8 finishers -----------------------------------------------------
+  {
+    id: 'the-house',
+    name: 'The House',
+    description: 'Target score is doubled. The House always wins — prove it wrong.',
+    targetMult: 2,
+    finisher: true,
+  },
+  {
+    id: 'the-reaper',
+    name: 'The Reaper',
+    description: 'Each stock deal and recycle costs $2, and no discards',
+    moneyPerDeal: 2,
+    modifyRules: (rules) => ({ ...rules, discards: 0 }),
+    finisher: true,
+  },
+  {
+    id: 'the-eclipse',
+    name: 'The Eclipse',
+    description: 'Card enhancements and joker editions do not trigger',
+    mutesEnhancements: true,
+    finisher: true,
+  },
 ]
 
 export const bossRegistry: Record<string, BossDef> = Object.fromEntries(defs.map((d) => [d.id, d]))
 
-export const allBossIds = defs.map((d) => d.id)
+export const allBossIds = defs.filter((d) => !d.finisher).map((d) => d.id)
+
+export const finisherBossIds = defs.filter((d) => d.finisher).map((d) => d.id)

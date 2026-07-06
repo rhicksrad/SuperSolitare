@@ -11,8 +11,10 @@ A roguelike deck-builder built on Klondike solitaire — Balatro's run structure
 - Playing a card to a foundation scores **chips × mult**. Chips come from the card and your foundation level; mult grows with your **streak** — consecutive foundation plays without dealing from the stock. Plan your cascades, then chain them.
 - Reveals and emptied columns score flat points. Clearing the whole board pays a big bonus.
 - Reach the target, then choose: **cash out** and bank the win, or keep playing toward a board clear.
-- Winnings buy **jokers** (25 of them — flat bonuses, conditional ×mults, economy, rule-benders, and scalers), **god cards** (one-shot consumables: permanent level-ups from Ares/Hermes/Hestia, tricks from Zeus/Poseidon/Hades…), and **card enhancements** (Gilded/Ruby/Sapphire/Lucky, permanently attached to specific deck cards).
-- **Boss blinds** bend the rules: no discards, 5-card deals, muted reveals, silenced jokers, capped streaks…
+- Winnings buy **jokers** (47 of them — flat bonuses, conditional ×mults, economy, rule-benders, and scalers, some rolled with **Foil/Holo/Negative editions**), **god cards** (13 one-shot consumables: permanent level-ups from Ares/Hermes/Hestia, tricks from Zeus, Artemis's waste-burn, Hecate's curse cleansing…), **card enhancements** (Gilded/Ruby/Sapphire/Lucky, permanently attached to specific deck cards), and **vouchers** (10 permanent run upgrades, one offered per ante).
+- **15 boss blinds** bend the rules — no discards, 5-card deals, muted reveals, silenced jokers, The Hex cursing your cards — and ante 8 always ends on one of **3 finisher bosses**.
+- Skipping a small/big blind grants the **tag** shown on its card. Choose one of **5 starting decks** and one of **3 stakes**; win ante 8 and keep going in **Endless mode**.
+- All sound is synthesized live in WebAudio (no assets), cards physically fly between piles, and there's a full **collection compendium** on the menu.
 
 Runs are fully seeded and deterministic — share a seed to race a friend, or play the **Daily Run**.
 

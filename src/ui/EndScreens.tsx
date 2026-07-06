@@ -43,6 +43,7 @@ export function VictoryScreen() {
   const run = useGame((s) => s.run)
   const abandonRun = useGame((s) => s.abandonRun)
   const newGame = useGame((s) => s.newGame)
+  const enterEndless = useGame((s) => s.enterEndless)
   if (!run) return null
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -51,6 +52,12 @@ export function VictoryScreen() {
           Victory!
         </h1>
         <p className="text-slate-300">All 8 antes conquered. The deck bows to you.</p>
+        <button
+          className="rounded-xl border-2 border-[var(--gold)] text-[var(--gold)] font-bold px-6 py-3 hover:bg-[var(--gold)]/10 cashout-glow"
+          onClick={enterEndless}
+        >
+          Continue in Endless Mode ∞
+        </button>
         <div className="panel p-4 grid grid-cols-2 gap-2 text-sm">
           <div className="text-slate-400 text-left">Blinds beaten</div>
           <div className="text-right font-semibold big-number">{run.roundsWon}</div>

@@ -24,7 +24,9 @@ All four must stay green. Playwright's own browser download tends to stall on th
 
 ## Core game rules (the pitch)
 
-No timer. Resources per round: recycles (stock refills) and discards (burn top waste card). Foundation plays score chips × mult with streak-driven mult. 8 antes × small/big/boss blinds; fail one blind = run over. Shop between blinds sells jokers, god cards (Greek gods = planet/tarot analog), and packs that enhance specific deck cards.
+No timer. Resources per round: recycles (stock refills) and discards (burn top waste card). Foundation plays score chips × mult with streak-driven mult. 8 antes × small/big/boss blinds; fail one blind = run over. Shop between blinds sells jokers (with foil/holo/negative editions), god cards (Greek gods = planet/tarot analog), packs that enhance specific deck cards, and one voucher per ante (permanent upgrades). Skip tags are visible before skipping (`skipTagFor`). 5 starting decks + 3 stakes chosen at run start; ante 8 boss is always a finisher; endless mode continues past ante 8 (`ensureBossForAnte` rolls bosses lazily). The Hex boss curses card ids for the round via `round.curses`.
+
+Audio is fully synthesized in `src/ui/audio.ts` (WebAudio, zero assets; engine/store call `sfx.*`). Card movement uses a FLIP hook keyed on `data-card-id` in `Board.tsx`; settings (sfx/music/reduceMotion) persist in localStorage separately from saves.
 
 ## Balance
 
