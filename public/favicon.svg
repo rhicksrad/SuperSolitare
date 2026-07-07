@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- pixel-art playing card on the game's dark table -->
+  <path fill="#0a0e19" d="M1 0h14v1h1v14h-1v1H1v-1H0V1h1z"/>
+  <path fill="#ffbe3d" d="M4 1h8v1h1v12h-1v1H4v-1H3V2h1z"/>
+  <path fill="#f2ecdc" d="M5 3h6v10H5z"/>
+  <path fill="#c22f3e" d="M6 5h1v1h1v1h1V6h1V5h1v3h-1v1H9v1H8v-1H7V9H6z"/>
+</svg>

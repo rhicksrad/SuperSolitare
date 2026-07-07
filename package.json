@@ -10,7 +10,9 @@
   "homepage": "https://rhicksrad.github.io/SuperSolitare/",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-og.mjs",
     "build": "tsc -b && vite build",
+    "prebuild:docs": "node scripts/generate-og.mjs",
     "build:docs": "tsc -b && vite build --outDir docs",
     "lint": "eslint .",
     "preview": "vite preview",

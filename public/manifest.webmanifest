@@ -1,0 +1,17 @@
+{
+  "name": "SuperSolitaire",
+  "short_name": "SuperSolitaire",
+  "description": "A roguelike deckbuilder built on Klondike solitaire. Chain chips × mult, beat boss blinds, survive 8 antes.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0e19",
+  "theme_color": "#0a0e19",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
