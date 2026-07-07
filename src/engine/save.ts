@@ -33,6 +33,7 @@ function migrate(payload: SavePayload): SavePayload {
   run.endless ??= false
   if (payload.round) {
     payload.round.curses ??= []
+    payload.round.wasteFan ??= Math.min(payload.round.rules.dealSize, payload.round.waste.length)
   }
   return { ...payload, version: 4 }
 }
@@ -60,23 +61,56 @@ export function clearSave(): void {
 // ---------------------------------------------------------------------------
 // Lifetime stats / bests
 
+export interface Discovered {
+  jokers: string[]
+  gods: string[]
+  bosses: string[]
+  vouchers: string[]
+}
+
 export interface LifetimeStats {
   runsStarted: number
   runsWon: number
   bestAnte: number
   bestPlay: number
   dailyBests: Record<string, number> // seed -> best ante reached
+  /** highest stake level beaten per deck id — Balatro-style stickers; a deck
+   * appearing here at all unlocks the next deck in order */
+  stakeWins: Record<string, number>
+  /** everything the player has ever laid eyes on; the collection shows "?"
+   * for the rest */
+  discovered: Discovered
 }
 
-const DEFAULT_STATS: LifetimeStats = { runsStarted: 0, runsWon: 0, bestAnte: 0, bestPlay: 0, dailyBests: {} }
+const DEFAULT_STATS: LifetimeStats = {
+  runsStarted: 0,
+  runsWon: 0,
+  bestAnte: 0,
+  bestPlay: 0,
+  dailyBests: {},
+  stakeWins: {},
+  discovered: { jokers: [], gods: [], bosses: [], vouchers: [] },
+}
 
 export function loadStats(): LifetimeStats {
   try {
     const raw = localStorage.getItem(STATS_KEY)
-    if (!raw) return { ...DEFAULT_STATS }
-    return { ...DEFAULT_STATS, ...(JSON.parse(raw) as Partial<LifetimeStats>) }
+    if (!raw) return structuredClone(DEFAULT_STATS)
+    const parsed = JSON.parse(raw) as Partial<LifetimeStats> & { decksBeaten?: string[]; stakesBeaten?: number[] }
+    const stats: LifetimeStats = {
+      ...structuredClone(DEFAULT_STATS),
+      ...parsed,
+      discovered: { ...structuredClone(DEFAULT_STATS.discovered), ...parsed.discovered },
+      stakeWins: { ...parsed.stakeWins },
+    }
+    // migrate the short-lived global decksBeaten/stakesBeaten format
+    if (parsed.decksBeaten && Object.keys(stats.stakeWins).length === 0) {
+      const highStake = Math.max(0, ...(parsed.stakesBeaten ?? [0]))
+      for (const deck of parsed.decksBeaten) stats.stakeWins[deck] = highStake
+    }
+    return stats
   } catch {
-    return { ...DEFAULT_STATS }
+    return structuredClone(DEFAULT_STATS)
   }
 }
 

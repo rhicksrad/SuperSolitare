@@ -6,6 +6,7 @@ import { EDITION_META } from '../engine/types'
 import { voucherRegistry } from '../engine/vouchers'
 import { useGame } from '../state/store'
 import { CardView } from './CardView'
+import { GodCard, JokerCard, VoucherCard } from './ArtCards'
 import { GodTray, JokerTray, LevelsBadge, MoneyBadge, VoucherStrip } from './Trays'
 
 function ResultBanner() {
@@ -23,7 +24,7 @@ function ResultBanner() {
           <div className="text-sm text-slate-300 flex flex-wrap gap-x-4">
             {result.breakdown.map((b, i) => (
               <span key={i}>
-                {b.label}: <span className="text-[var(--gold)] font-semibold">+${b.amount}</span>
+                {b.label}: <span className="text-[var(--gold)] font-bold">+${b.amount}</span>
               </span>
             ))}
           </div>
@@ -48,10 +49,14 @@ function PackModal() {
           {pack.type === 'card' ? 'Card Pack' : pack.type === 'god' ? 'Pantheon Pack' : 'Joker Pack'}
         </h2>
         <p className="text-sm text-slate-400 mb-4">Choose one</p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className={pack.type === 'card' ? 'grid grid-cols-3 gap-4' : 'flex justify-center gap-4 flex-wrap'}>
           {pack.type === 'card' &&
             pack.choices.map((choice, i) => (
-              <button key={i} className="panel p-3 hover:ring-2 hover:ring-[var(--gold)] flex flex-col items-center gap-2" onClick={() => choosePackItem(i)}>
+              <button
+                key={i}
+                className="panel p-3 hover:ring-2 hover:ring-[var(--gold)] flex flex-col items-center gap-2"
+                onClick={() => choosePackItem(i)}
+              >
                 <CardView card={{ ...choice.card, faceUp: true }} enhancement={choice.enhancement} />
                 <div className="text-sm font-bold capitalize">{ENHANCEMENTS[choice.enhancement].name}</div>
                 <div className="text-xs text-slate-400 text-center">
@@ -61,27 +66,21 @@ function PackModal() {
               </button>
             ))}
           {pack.type === 'god' &&
-            pack.choices.map((id, i) => {
-              const def = godRegistry[id]
-              return (
-                <button key={i} className="panel p-3 hover:ring-2 hover:ring-[var(--gold)] text-left" onClick={() => choosePackItem(i)}>
-                  <div className="font-bold text-amber-200">{def.name}</div>
-                  <div className="text-xs text-slate-400 mb-1">{def.title}</div>
-                  <div className="text-xs text-slate-300">{def.description}</div>
-                </button>
-              )
-            })}
+            pack.choices.map((id, i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <GodCard id={id} onClick={() => choosePackItem(i)} />
+                <div className="text-xs text-slate-300 max-w-[130px] text-center leading-snug">{godRegistry[id]?.description}</div>
+              </div>
+            ))}
           {pack.type === 'joker' &&
-            pack.choices.map((id, i) => {
-              const def = jokerRegistry[id]
-              return (
-                <button key={i} className={`panel p-3 hover:ring-2 hover:ring-[var(--gold)] text-left rarity-${def.rarity}`} onClick={() => choosePackItem(i)}>
-                  <div className="font-bold">{def.name}</div>
-                  <div className="text-[10px] text-slate-400 capitalize mb-1">{def.rarity}</div>
-                  <div className="text-xs text-slate-300">{describeJoker(newJokerInstance(id))}</div>
-                </button>
-              )
-            })}
+            pack.choices.map((id, i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <JokerCard joker={id} onClick={() => choosePackItem(i)} />
+                <div className="text-xs text-slate-300 max-w-[130px] text-center leading-snug">
+                  {describeJoker(newJokerInstance(id))}
+                </div>
+              </div>
+            ))}
         </div>
         <div className="mt-4 text-center">
           <button className="text-sm text-slate-400 hover:text-slate-200 underline underline-offset-4" onClick={skipPack}>
@@ -90,6 +89,35 @@ function PackModal() {
         </div>
       </div>
     </div>
+  )
+}
+
+function PriceButton({
+  sold,
+  soldLabel,
+  price,
+  canAfford,
+  onBuy,
+  color = 'btn-gold',
+  testid,
+}: {
+  sold: boolean
+  soldLabel: string
+  price: number
+  canAfford: boolean
+  onBuy: () => void
+  color?: string
+  testid?: string
+}) {
+  return (
+    <button
+      className={`btn ${color} mt-2 w-full py-1.5 text-sm`}
+      onClick={onBuy}
+      disabled={sold || !canAfford}
+      data-testid={testid}
+    >
+      {sold ? soldLabel : `Buy $${price}`}
+    </button>
   )
 }
 
@@ -118,93 +146,97 @@ export function ShopScreen() {
 
       <div className="panel p-5">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-extrabold">The Shop</h1>
-          <div className="flex gap-2">
-            <button
-              className="rounded-lg bg-slate-700/70 px-4 py-2 text-sm font-semibold hover:bg-slate-600/70 disabled:opacity-40"
-              onClick={reroll}
-              disabled={run.money < rerollCost(run, rerolls)}
-            >
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>
+            The Shop
+          </h1>
+          <div className="flex gap-3">
+            <button className="btn btn-dark px-4 py-2 text-sm" onClick={reroll} disabled={run.money < rerollCost(run, rerolls)}>
               Reroll ${rerollCost(run, rerolls)}
             </button>
-            <button className="rounded-lg bg-[var(--gold)] text-slate-900 px-4 py-2 font-bold hover:brightness-110" onClick={leaveShop} data-testid="next-round">
+            <button className="btn btn-gold px-4 py-2" onClick={leaveShop} data-testid="next-round">
               Next Round →
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
           {shopOffers.map((offer) => {
             if (offer.kind === 'joker') {
               const def = jokerRegistry[offer.jokerId]
               return (
-                <div
-                  key={offer.slot}
-                  className={`panel p-3 flex flex-col rarity-${def.rarity} ${offer.edition ? `edition-${offer.edition}` : ''} ${offer.sold ? 'opacity-40' : ''}`}
-                >
-                  <div className="font-bold text-sm">{def.name}</div>
-                  <div className="text-[10px] text-slate-400 capitalize">
-                    {def.rarity} joker
-                    {offer.edition && (
-                      <span className={`ml-1 font-bold edition-text-${offer.edition}`}>· {EDITION_META[offer.edition].name}</span>
-                    )}
+                <div key={offer.slot} className={`flex flex-col w-[112px] ${offer.sold ? 'opacity-40' : ''}`}>
+                  <div className="flex justify-center">
+                    <JokerCard
+                      joker={
+                        offer.edition
+                          ? { ...newJokerInstance(offer.jokerId), edition: offer.edition }
+                          : offer.jokerId
+                      }
+                    />
                   </div>
-                  <div className="text-xs text-slate-300 mt-1 flex-1">
+                  <div className="text-[11px] text-slate-300 mt-1 text-center leading-snug min-h-8">
                     {describeJoker(newJokerInstance(def.id))}
-                    {offer.edition && <div className="mt-1 text-slate-400">{EDITION_META[offer.edition].description}</div>}
                   </div>
-                  <button
-                    className="mt-2 rounded-lg bg-[var(--gold)] text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() => buyOffer(offer.slot)}
-                    disabled={offer.sold || run.money < offer.price}
-                  >
-                    {offer.sold ? 'Sold' : `Buy $${offer.price}`}
-                  </button>
-                </div>
-              )
-            }
-            if (offer.kind === 'voucher') {
-              const def = voucherRegistry[offer.voucherId]
-              return (
-                <div key={offer.slot} className={`panel p-3 flex flex-col voucher-card ${offer.sold ? 'opacity-40' : ''}`}>
-                  <div className="font-bold text-sm text-purple-300">{def.name}</div>
-                  <div className="text-[10px] text-slate-400">voucher · permanent</div>
-                  <div className="text-xs text-slate-300 mt-1 flex-1">{def.description}</div>
-                  <button
-                    className="mt-2 rounded-lg bg-purple-400 text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() => buyOffer(offer.slot)}
-                    disabled={offer.sold || run.money < offer.price}
-                  >
-                    {offer.sold ? 'Redeemed' : `Buy $${offer.price}`}
-                  </button>
+                  {offer.edition && (
+                    <div className={`text-[10px] text-center font-bold edition-text-${offer.edition}`}>
+                      {EDITION_META[offer.edition].name}
+                    </div>
+                  )}
+                  <PriceButton
+                    sold={offer.sold ?? false}
+                    soldLabel="Sold"
+                    price={offer.price}
+                    canAfford={run.money >= offer.price}
+                    onBuy={() => buyOffer(offer.slot)}
+                  />
                 </div>
               )
             }
             if (offer.kind === 'god') {
               const def = godRegistry[offer.godId]
               return (
-                <div key={offer.slot} className={`panel p-3 flex flex-col ${offer.sold ? 'opacity-40' : ''}`}>
-                  <div className="font-bold text-sm text-amber-200">{def.name}</div>
-                  <div className="text-[10px] text-slate-400">{def.title}</div>
-                  <div className="text-xs text-slate-300 mt-1 flex-1">{def.description}</div>
-                  <button
-                    className="mt-2 rounded-lg bg-[var(--gold)] text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() => buyOffer(offer.slot)}
-                    disabled={offer.sold || run.money < offer.price}
-                  >
-                    {offer.sold ? 'Sold' : `Buy $${offer.price}`}
-                  </button>
+                <div key={offer.slot} className={`flex flex-col w-[112px] ${offer.sold ? 'opacity-40' : ''}`}>
+                  <div className="flex justify-center">
+                    <GodCard id={offer.godId} />
+                  </div>
+                  <div className="text-[11px] text-slate-300 mt-1 text-center leading-snug min-h-8">{def.description}</div>
+                  <PriceButton
+                    sold={offer.sold ?? false}
+                    soldLabel="Sold"
+                    price={offer.price}
+                    canAfford={run.money >= offer.price}
+                    onBuy={() => buyOffer(offer.slot)}
+                  />
+                </div>
+              )
+            }
+            if (offer.kind === 'voucher') {
+              const def = voucherRegistry[offer.voucherId]
+              return (
+                <div key={offer.slot} className={`flex flex-col w-[112px] ${offer.sold ? 'opacity-40' : ''}`}>
+                  <div className="flex justify-center">
+                    <VoucherCard id={offer.voucherId} redeemed={offer.sold} />
+                  </div>
+                  <div className="text-[11px] text-slate-300 mt-1 text-center leading-snug min-h-8">{def.description}</div>
+                  <PriceButton
+                    sold={offer.sold ?? false}
+                    soldLabel="Redeemed"
+                    price={offer.price}
+                    canAfford={run.money >= offer.price}
+                    onBuy={() => buyOffer(offer.slot)}
+                    color="btn-purple"
+                  />
                 </div>
               )
             }
             const meta = PACK_META[offer.packType]
             return (
-              <div key={offer.slot} className={`panel p-3 flex flex-col ${offer.sold ? 'opacity-40' : ''}`}>
+              <div key={offer.slot} className={`panel p-3 flex flex-col w-[150px] ${offer.sold ? 'opacity-40' : ''}`}>
                 <div className="font-bold text-sm text-sky-200">{meta.name}</div>
                 <div className="text-[10px] text-slate-400">booster pack</div>
                 <div className="text-xs text-slate-300 mt-1 flex-1">{meta.description}</div>
                 <button
-                  className="mt-2 rounded-lg bg-[var(--gold)] text-slate-900 font-bold py-1.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="btn btn-dark mt-2 w-full py-1.5 text-sm"
                   onClick={() => buyOffer(offer.slot)}
                   disabled={offer.sold || run.money < offer.price}
                 >
@@ -214,7 +246,7 @@ export function ShopScreen() {
             )
           })}
         </div>
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-slate-500">
           Sell jokers from the tray above · packs and vouchers stay through rerolls · interest pays $1 per $5 held
         </p>
       </div>

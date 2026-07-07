@@ -1,13 +1,21 @@
 @import 'tailwindcss';
 
+/* ================================================================== theme
+   Pixel-arcade design system: chunky ink outlines, hard drop shadows,
+   felt-table backdrop, and one bundled pixel font (Pixelify Sans). */
+
 :root {
   --card-w: clamp(58px, 6.6vw, 92px);
   --card-h: calc(var(--card-w) * 1.4);
   --stack-gap: calc(var(--card-h) * 0.24);
   --stack-gap-down: calc(var(--card-h) * 0.11);
-  --chips: #4f9cf9;
-  --mult: #f74d4d;
-  --gold: #f0b429;
+  --chips: #45a8ff;
+  --mult: #ff4d5e;
+  --gold: #ffbe3d;
+  --ink: #10131f;
+  --paper: #f7f3e8;
+  --panel: #171c30;
+  --panel-edge: #2d3757;
 }
 
 html,
@@ -17,131 +25,606 @@ body,
 }
 
 body {
-  @apply text-slate-100 antialiased;
-  background-color: #101623;
-  background-image:
-    radial-gradient(1100px 600px at 50% -10%, rgba(59, 91, 156, 0.35), transparent 65%),
-    radial-gradient(900px 500px at 85% 110%, rgba(24, 94, 68, 0.28), transparent 60%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 6px);
-  background-attachment: fixed;
+  @apply text-slate-100;
+  font-family: 'Pixel Digits', 'Pixelify Sans', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: none;
+  background-color: #0a0e19;
   overflow-x: hidden;
+}
+
+/* the felt table — a fixed layer instead of background-attachment: fixed,
+   which repaints glitchily on scroll in Chromium */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(28, 84, 66, 0.55), transparent 65%),
+    radial-gradient(900px 600px at 90% 110%, rgba(122, 30, 52, 0.35), transparent 60%),
+    radial-gradient(700px 500px at 4% 100%, rgba(34, 52, 110, 0.35), transparent 60%);
+}
+
+/* scanlines + vignette overlay — the CRT edge */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45));
+}
+
+/* slow breathing table glow */
+#root::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(600px 400px at 30% 40%, rgba(70, 217, 139, 0.07), transparent 70%),
+    radial-gradient(700px 500px at 70% 60%, rgba(255, 77, 94, 0.07), transparent 70%);
+  animation: table-glow 16s ease-in-out infinite alternate;
+}
+
+@keyframes table-glow {
+  from {
+    transform: translate(-2%, -1%) scale(1);
+  }
+  to {
+    transform: translate(2%, 2%) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #root::before {
+    animation: none;
+  }
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 button {
   cursor: pointer;
+  font-family: inherit;
 }
 
-/* ---------------------------------------------------------------- cards */
+/* ================================================================ buttons */
+
+.btn {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font-weight: 700;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 70ms ease, box-shadow 70ms ease, filter 120ms ease;
+}
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 var(--ink);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-gold {
+  background: linear-gradient(180deg, #ffd166, var(--gold));
+  color: #2b1c04;
+}
+.btn-dark {
+  background: linear-gradient(180deg, #333e63, #262f4d);
+  color: #dbe4f4;
+}
+.btn-green {
+  background: linear-gradient(180deg, #57e39a, #2fb872);
+  color: #06281a;
+}
+.btn-red {
+  background: linear-gradient(180deg, #ff6a77, #e03546);
+  color: #33060b;
+}
+.btn-purple {
+  background: linear-gradient(180deg, #cf8cf7, #a556e0);
+  color: #26073d;
+}
+
+/* ================================================================== cards */
 
 .card {
   width: var(--card-w);
   height: var(--card-h);
-  border-radius: calc(var(--card-w) * 0.1);
+  border-radius: 6px;
   user-select: none;
   -webkit-user-drag: element;
   position: relative;
-  transition: transform 120ms ease, box-shadow 120ms ease, outline-color 120ms ease;
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 140ms ease;
 }
 
 .card-face {
-  background: linear-gradient(165deg, #fdfdf8 0%, #eceadf 100%);
-  color: #1d222b;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--paper);
+  color: #232839;
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 
 .card-face.red {
-  color: #c2273a;
+  color: #d92b3f;
 }
 
 .card-back {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0 18%, transparent 19%),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 9px),
-    linear-gradient(165deg, #35427e 0%, #232b52 100%);
-  border: 1px solid rgba(12, 16, 38, 0.9);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--ink);
+  background-color: #7e2136;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255, 190, 61, 0.9) 0 9%, transparent 10%),
+    repeating-linear-gradient(45deg, rgba(255, 190, 61, 0.28) 0 2px, transparent 2px 8px),
+    repeating-linear-gradient(-45deg, rgba(255, 190, 61, 0.28) 0 2px, transparent 2px 8px),
+    linear-gradient(180deg, #8d2540, #5f1728);
+  box-shadow: inset 0 0 0 2px #3d0d1c, inset 0 0 0 3px rgba(255, 190, 61, 0.55), 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 
 .card-selectable:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  transform: translateY(-4px) rotate(-1.6deg) scale(1.03);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 8px 0 rgba(0, 0, 0, 0.35);
+  z-index: 25;
 }
 
 .card-selected {
   outline: 3px solid var(--gold);
   outline-offset: 1px;
-  transform: translateY(-6px);
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.55);
+  transform: translateY(-8px) rotate(-1.6deg);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.35), 0 0 18px rgba(255, 190, 61, 0.45);
   z-index: 30;
 }
 
 .card-pop-in {
-  animation: pop-in 160ms ease-out;
+  animation: pop-in 170ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes pop-in {
   from {
-    transform: translateY(8px) scale(0.96);
+    transform: translateY(10px) rotate(3deg) scale(0.9);
     opacity: 0.2;
   }
   to {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) rotate(0) scale(1);
     opacity: 1;
   }
 }
 
 /* enhancements */
 .enh-gilded {
-  box-shadow: 0 0 0 2px #d9a92c, 0 0 12px rgba(240, 180, 41, 0.65);
+  box-shadow: 0 0 0 2px #d9a92c, 0 0 12px rgba(240, 180, 41, 0.65), 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 .enh-ruby {
-  box-shadow: 0 0 0 2px #d43a4b, 0 0 12px rgba(247, 77, 77, 0.6);
+  box-shadow: 0 0 0 2px #d43a4b, 0 0 12px rgba(247, 77, 77, 0.6), 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 .enh-sapphire {
-  box-shadow: 0 0 0 2px #3c74e0, 0 0 12px rgba(79, 156, 249, 0.65);
+  box-shadow: 0 0 0 2px #3c74e0, 0 0 12px rgba(79, 156, 249, 0.65), 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 .enh-lucky {
-  box-shadow: 0 0 0 2px #2fa35c, 0 0 12px rgba(66, 199, 122, 0.6);
+  box-shadow: 0 0 0 2px #2fa35c, 0 0 12px rgba(66, 199, 122, 0.6), 0 3px 0 rgba(0, 0, 0, 0.5);
+}
+.enh-cursed {
+  box-shadow: 0 0 0 2px #8b3ff2, 0 0 14px rgba(160, 70, 255, 0.75), 0 3px 0 rgba(0, 0, 0, 0.5);
+  filter: saturate(0.6);
 }
 
 /* pile outline */
 .pile-slot {
   width: var(--card-w);
   height: var(--card-h);
-  border-radius: calc(var(--card-w) * 0.1);
-  border: 2px dashed rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .drop-ready {
-  outline: 3px solid rgba(240, 180, 41, 0.8);
+  outline: 3px solid rgba(255, 190, 61, 0.85);
   outline-offset: 2px;
-  border-radius: calc(var(--card-w) * 0.1);
+  border-radius: 6px;
 }
 
-/* ------------------------------------------------------------- score pops */
+/* ====================================================== joker / god cards */
+
+.pcard {
+  width: 96px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #232a45, #161b2e);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+  text-align: center;
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.pcard:hover {
+  transform: translateY(-5px) rotate(-1.4deg);
+  z-index: 45;
+}
+.pcard-bob {
+  animation: card-bob 3.6s ease-in-out infinite;
+}
+@keyframes card-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(0.6deg);
+  }
+}
+.pcard-bob:hover {
+  animation: none;
+  transform: translateY(-5px) rotate(-1.4deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pcard-bob {
+    animation: none;
+  }
+}
+
+.pcard-art {
+  aspect-ratio: 1;
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.pcard-sprite {
+  display: block;
+}
+.pcard-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.05;
+  padding: 4px 1px 2px;
+  color: #eef2fb;
+}
+.pcard-silenced {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+/* jokers: paper playing cards — the art sits on a "J" card like a real jack */
+.pcard-joker {
+  width: 100px;
+  min-height: 138px;
+  background: var(--paper);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), 0 4px 0 rgba(0, 0, 0, 0.5);
+  padding: 6px 5px 3px;
+  justify-content: flex-start;
+}
+.pcard-art-joker {
+  margin: 8px 8px 0;
+}
+.pcard-name-joker {
+  color: #232839;
+}
+.pcard-index {
+  position: absolute;
+  top: 1px;
+  left: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+.pcard-index-br {
+  top: auto;
+  left: auto;
+  bottom: 1px;
+  right: 5px;
+  transform: rotate(180deg);
+}
+.rarity-common .pcard-index {
+  color: #5a6484;
+}
+.rarity-uncommon .pcard-index {
+  color: #248a52;
+}
+.rarity-rare .pcard-index {
+  color: #2f63cf;
+}
+.rarity-legendary .pcard-index {
+  color: #9b4fd4;
+}
+
+/* rarity gem in the art window corner */
+.rarity-gem {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.gem-common {
+  background: #9fb0c8;
+}
+.gem-uncommon {
+  background: #47c47a;
+}
+.gem-rare {
+  background: #4f9cf9;
+}
+.gem-legendary {
+  background: #c66df2;
+  box-shadow: 0 0 8px rgba(198, 109, 242, 0.9);
+}
+
+.rarity-common {
+  border-color: #39415c;
+}
+.rarity-uncommon {
+  border-color: #2f8a58;
+}
+.rarity-rare {
+  border-color: #3a6fd8;
+}
+.rarity-legendary {
+  border-color: #9b4fd4;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 0 14px rgba(198, 109, 242, 0.35);
+}
+
+/* god cards: gilded night frames */
+.pcard-god {
+  background: linear-gradient(180deg, #2b2340, #171226);
+  border-color: #6b5218;
+  box-shadow: inset 0 0 0 1px rgba(255, 190, 61, 0.45), 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+.pcard-art-god {
+  background: radial-gradient(circle at 50% 25%, #43335f, #191227 78%);
+}
+.pcard-name-god {
+  color: #ffd166;
+}
+.pcard-title {
+  font-size: 10px;
+  line-height: 1;
+  color: #b7a8d6;
+  padding-bottom: 3px;
+}
+
+/* vouchers: punched tickets with a perforation line */
+.pcard-voucher {
+  background: linear-gradient(180deg, #2f2547, #1c162f);
+  border-color: #8455c4;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+.pcard-art-voucher {
+  background: radial-gradient(circle at 50% 28%, #4a3572, #221741 78%);
+  border-color: #131625;
+}
+.pcard-name-voucher {
+  color: #dcc8ff;
+  border-top: 2px dashed rgba(196, 132, 252, 0.4);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.pcard-title-voucher {
+  color: #8f7ab5;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.voucher-notch {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #0a0e19;
+  border: 2px solid #8455c4;
+  pointer-events: none;
+}
+.voucher-notch-l {
+  left: -8px;
+}
+.voucher-notch-r {
+  right: -8px;
+}
+.pcard-redeemed .pcard-art-voucher {
+  filter: saturate(0.7);
+}
+
+/* deck backs shown in the loadout picker & collection */
+.deck-back {
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 3px 0 rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* per-deck stake sticker (highest beaten stake) */
+.stake-sticker {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.stake-sticker-0 {
+  background: #f1f5f9;
+}
+.stake-sticker-1 {
+  background: #ff5252;
+}
+.stake-sticker-2 {
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 190, 61, 0.8);
+}
+
+/* victory unlock splash */
+.unlock-pop {
+  animation: unlock-pop 700ms cubic-bezier(0.34, 1.8, 0.5, 1) both;
+}
+@keyframes unlock-pop {
+  0% {
+    transform: scale(0.2) rotate(-6deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.12) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .unlock-pop {
+    animation: none;
+  }
+}
+
+/* patient tooltip for playing cards: appears after hovering for 3 seconds */
+.has-tip-slow {
+  position: relative;
+}
+.has-tip-slow .tip-slow {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 150px;
+  max-width: 220px;
+  padding: 8px 10px;
+  background: #0d1220;
+  border: 2px solid var(--panel-edge);
+  border-radius: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.35;
+  color: #dbe4f4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease 0s;
+  z-index: 70;
+  text-align: left;
+  font-weight: 400;
+}
+.has-tip-slow:hover {
+  z-index: 40;
+}
+.has-tip-slow:hover .tip-slow {
+  opacity: 1;
+  transition-delay: 3s;
+}
+
+/* compact voucher chip for the owned-vouchers strip */
+.voucher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid rgba(196, 132, 252, 0.55);
+  border-radius: 7px;
+  background: linear-gradient(180deg, #2f2547, #1c162f);
+  padding: 3px 10px 3px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dcc8ff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* boss emblems */
+.boss-emblem {
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: radial-gradient(circle at 50% 32%, #5c2130, #1e0c13 78%);
+  box-shadow: 0 0 0 2px rgba(255, 80, 90, 0.4), 0 4px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.boss-emblem-finisher {
+  background: radial-gradient(circle at 50% 32%, #46215c, #150c1e 78%);
+  box-shadow: 0 0 0 2px rgba(198, 109, 242, 0.55), 0 0 16px rgba(198, 109, 242, 0.4), 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* editions */
+.edition-foil {
+  background-image: linear-gradient(115deg, rgba(120, 180, 255, 0.22), rgba(255, 255, 255, 0.06) 40%, rgba(120, 180, 255, 0.22));
+  border-color: rgba(120, 180, 255, 0.8) !important;
+}
+.edition-holo {
+  background-image: linear-gradient(115deg, rgba(255, 110, 199, 0.22), rgba(122, 255, 199, 0.12) 50%, rgba(140, 130, 255, 0.24));
+  border-color: rgba(255, 110, 199, 0.8) !important;
+}
+.edition-negative {
+  filter: invert(0.09) hue-rotate(180deg);
+  border-color: rgba(220, 220, 255, 0.85) !important;
+}
+.edition-text-foil {
+  color: #78b4ff;
+}
+.edition-text-holo {
+  color: #ff6ec7;
+}
+.edition-text-negative {
+  color: #e6e6ff;
+}
+
+.voucher-card {
+  border-color: rgba(196, 132, 252, 0.55) !important;
+}
+
+/* ============================================================= score pops */
 
 .pop-float {
   animation: pop-float 1.5s ease-out forwards;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  text-shadow:
+    2px 0 0 var(--ink),
+    -2px 0 0 var(--ink),
+    0 2px 0 var(--ink),
+    0 -2px 0 var(--ink),
+    2px 2px 0 var(--ink),
+    -2px 2px 0 var(--ink),
+    0 4px 0 rgba(0, 0, 0, 0.6);
 }
 
 @keyframes pop-float {
   0% {
-    transform: translateY(6px) scale(0.9);
+    transform: translateY(8px) scale(0.7);
     opacity: 0;
   }
   12% {
-    transform: translateY(0) scale(1.08);
+    transform: translateY(0) scale(1.15);
     opacity: 1;
   }
+  24% {
+    transform: translateY(-2px) scale(1);
+  }
   70% {
-    transform: translateY(-18px) scale(1);
+    transform: translateY(-20px) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateY(-34px) scale(0.98);
+    transform: translateY(-38px) scale(0.96);
     opacity: 0;
   }
 }
@@ -168,77 +651,20 @@ button {
 @keyframes cashout-glow {
   0%,
   100% {
-    box-shadow: 0 0 6px rgba(240, 180, 41, 0.5);
+    box-shadow: 0 4px 0 var(--ink), 0 0 6px rgba(255, 190, 61, 0.5);
   }
   50% {
-    box-shadow: 0 0 22px rgba(240, 180, 41, 0.95);
+    box-shadow: 0 4px 0 var(--ink), 0 0 24px rgba(255, 190, 61, 0.95);
   }
 }
 
-/* --------------------------------------------------------------- panels */
+/* ================================================================= panels */
 
 .panel {
-  background: linear-gradient(180deg, rgba(30, 39, 58, 0.92), rgba(20, 26, 40, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.joker-card {
-  background: linear-gradient(170deg, #2a3352, #1b2138);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, #1c2338, var(--panel));
+  border: 2px solid var(--panel-edge);
   border-radius: 10px;
-  transition: transform 120ms ease;
-}
-
-.joker-card:hover {
-  transform: translateY(-3px);
-}
-
-.rarity-common {
-  box-shadow: inset 0 2px 0 #7f8ea8;
-}
-.rarity-uncommon {
-  box-shadow: inset 0 2px 0 #47c47a;
-}
-.rarity-rare {
-  box-shadow: inset 0 2px 0 #4f9cf9;
-}
-.rarity-legendary {
-  box-shadow: inset 0 2px 0 #c66df2;
-}
-
-/* editions */
-.edition-foil {
-  background-image: linear-gradient(115deg, rgba(120, 180, 255, 0.16), rgba(255, 255, 255, 0.05) 40%, rgba(120, 180, 255, 0.16));
-  border-color: rgba(120, 180, 255, 0.55) !important;
-}
-.edition-holo {
-  background-image: linear-gradient(115deg, rgba(255, 110, 199, 0.16), rgba(122, 255, 199, 0.1) 50%, rgba(140, 130, 255, 0.18));
-  border-color: rgba(255, 110, 199, 0.55) !important;
-}
-.edition-negative {
-  filter: invert(0.08) hue-rotate(180deg);
-  border-color: rgba(220, 220, 255, 0.7) !important;
-}
-.edition-text-foil {
-  color: #78b4ff;
-}
-.edition-text-holo {
-  color: #ff6ec7;
-}
-.edition-text-negative {
-  color: #e6e6ff;
-}
-
-.voucher-card {
-  border-color: rgba(196, 132, 252, 0.4) !important;
-}
-
-/* cursed cards (The Hex) */
-.enh-cursed {
-  box-shadow: 0 0 0 2px #8b3ff2, 0 0 14px rgba(160, 70, 255, 0.75);
-  filter: saturate(0.6);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
 }
 
 /* screen shake on big plays */
@@ -267,6 +693,33 @@ button {
   to { transform: translateY(-30vh) rotate(14deg); }
 }
 
+/* title lockup */
+.game-logo {
+  text-shadow:
+    3px 0 0 var(--ink),
+    -3px 0 0 var(--ink),
+    0 3px 0 var(--ink),
+    0 -3px 0 var(--ink),
+    3px 3px 0 var(--ink),
+    -3px 3px 0 var(--ink),
+    0 7px 0 rgba(0, 0, 0, 0.55);
+  animation: logo-bounce 3.2s ease-in-out infinite;
+}
+@keyframes logo-bounce {
+  0%,
+  100% {
+    transform: rotate(-1.2deg) scale(1);
+  }
+  50% {
+    transform: rotate(1.2deg) scale(1.02);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-logo {
+    animation: none;
+  }
+}
+
 /* custom tooltip */
 .has-tip {
   position: relative;
@@ -280,8 +733,9 @@ button {
   max-width: 240px;
   padding: 8px 10px;
   background: #0d1220;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 2px solid var(--panel-edge);
   border-radius: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
   font-size: 12px;
   line-height: 1.35;
   color: #dbe4f4;
@@ -290,6 +744,7 @@ button {
   transition: opacity 120ms ease;
   z-index: 60;
   text-align: left;
+  font-weight: 400;
 }
 .has-tip:hover .tip,
 .has-tip:focus-visible .tip {
@@ -298,7 +753,7 @@ button {
 
 .big-number {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
 }
 
 :focus-visible {

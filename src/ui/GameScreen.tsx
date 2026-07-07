@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { bossRegistry } from '../engine/bosses'
 import { foundationLevelBase } from '../engine/scoring'
 import { useGame } from '../state/store'
+import { BossEmblem } from './ArtCards'
 import { Board } from './Board'
 import { GodTray, JokerTray, MoneyBadge } from './Trays'
 
@@ -45,7 +46,12 @@ function Sidebar() {
   return (
     <div className="flex flex-col gap-3 w-56 shrink-0">
       <div className="panel p-3">
-        <div className="text-xs uppercase tracking-wide text-slate-400">Ante {run.ante} · {blindName}</div>
+        <div className="flex items-center gap-2">
+          {boss && <BossEmblem id={boss.id} size={40} />}
+          <div className="text-xs uppercase tracking-wide text-slate-400">
+            Ante {run.ante} · {blindName}
+          </div>
+        </div>
         {boss && <div className="mt-1 text-xs text-rose-300">{boss.description}</div>}
         <div className="mt-2 text-xs text-slate-400">Target</div>
         <div className="text-2xl font-bold big-number text-slate-100">{round.target.toLocaleString()}</div>
@@ -101,7 +107,7 @@ function Sidebar() {
           <span className="font-semibold big-number">{round.discardsLeft}</span>
         </div>
         <button
-          className="mt-1 rounded-lg px-3 py-1.5 text-sm font-semibold bg-slate-700/70 hover:bg-slate-600/70 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn btn-dark mt-1 px-3 py-1.5 text-sm"
           onClick={discardWaste}
           disabled={round.discardsLeft <= 0 || round.waste.length === 0}
         >
@@ -110,11 +116,7 @@ function Sidebar() {
       </div>
 
       <button
-        className={`rounded-xl px-4 py-3 font-bold text-base transition-colors ${
-          won
-            ? 'bg-[var(--gold)] text-slate-900 cashout-glow hover:brightness-110'
-            : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80'
-        }`}
+        className={`btn px-4 py-3 text-base ${won ? 'btn-gold cashout-glow' : 'btn-dark'}`}
         onClick={cashOut}
         data-testid="cash-out"
       >
@@ -133,7 +135,7 @@ function PopLayer() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-24 flex flex-col items-center gap-1 z-50">
       {pops.map((p) => (
-        <div key={p.uid} className="pop-float font-extrabold text-lg">
+        <div key={p.uid} className="pop-float font-bold text-2xl">
           {p.kind === 'foundation' ? (
             <span>
               <span style={{ color: 'var(--chips)' }}>{p.chips}</span>

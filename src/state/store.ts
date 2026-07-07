@@ -1,6 +1,7 @@
 // Zustand store: orchestrates the run/round engine and holds all UI state.
 
 import { create } from 'zustand'
+import { allDeckIds, deckRegistry, STAKES, unlockedDeckIds, unlockedStakesFor } from '../engine/decks'
 import type { CardPackChoice, ShopOffer } from '../engine/shop'
 import { generateShop, openCardPack, openGodPack, openJokerPack, rerollCost } from '../engine/shop'
 import type { Move, RoundState, TableauId } from '../engine/klondike'
@@ -13,7 +14,7 @@ import type { LifetimeStats } from '../engine/save'
 import type { ScorePop } from '../engine/scoring'
 import { bossBlockReason, performMove } from '../engine/scoring'
 import type { RunState } from '../engine/types'
-import { configureAudio, sfx, unlockAudio } from '../ui/audio'
+import { configureAudio, setMusicIntensity, sfx, unlockAudio } from '../ui/audio'
 
 export type Screen =
   | 'menu'
@@ -32,6 +33,7 @@ export interface Settings {
 }
 
 const SETTINGS_KEY = 'ss-settings-v1'
+const LOADOUT_KEY = 'ss-loadout-v1'
 
 function loadSettings(): Settings {
   try {
@@ -41,6 +43,22 @@ function loadSettings(): Settings {
     /* defaults below */
   }
   return { sfx: true, music: true, reduceMotion: false }
+}
+
+/** The deck + stake New Run deals with, chosen on the main menu */
+export interface Loadout {
+  deckId: string
+  stake: number
+}
+
+function loadLoadout(): Loadout {
+  try {
+    const raw = localStorage.getItem(LOADOUT_KEY)
+    if (raw) return { deckId: 'classic', stake: 0, ...(JSON.parse(raw) as Partial<Loadout>) }
+  } catch {
+    /* defaults below */
+  }
+  return { deckId: 'classic', stake: 0 }
 }
 
 export type Selection =
@@ -72,14 +90,20 @@ interface GameStore {
   message: { text: string; uid: number } | null
   roundResult: RoundResult | null
   stuck: boolean
+  /** "X unlocked!" lines shown on the victory screen */
+  victoryUnlocks: string[]
 
   shopOffers: ShopOffer[]
   rerolls: number
   pack: PackState
   skipReward: string | null
   settings: Settings
+  loadout: Loadout
 
   // menu / lifecycle
+  setLoadout: (patch: Partial<Loadout>) => void
+  /** New Run: deal immediately with the menu-selected loadout */
+  quickStart: (seed?: string) => void
   newGame: (seed?: string, mode?: 'standard' | 'daily', deckId?: string, stake?: number) => void
   continueGame: () => void
   abandonRun: () => void
@@ -141,6 +165,27 @@ function pushPops(set: (fn: (s: GameStore) => Partial<GameStore>) => void, pops:
 export const useGame = create<GameStore>((set, get) => {
   const say = (text: string) => set({ message: { text, uid: popUid++ } })
 
+  // Discovery: anything the player lays eyes on is recorded permanently and
+  // revealed in the collection (undiscovered entries show as "?").
+  const discover = (kind: 'jokers' | 'gods' | 'bosses' | 'vouchers', ids: (string | null | undefined)[]) => {
+    const stats = get().stats
+    const cur = stats.discovered[kind]
+    const add = ids.filter((id): id is string => !!id && !cur.includes(id))
+    if (add.length === 0) return
+    const nextStats: LifetimeStats = { ...stats, discovered: { ...stats.discovered, [kind]: [...cur, ...add] } }
+    saveStats(nextStats)
+    set({ stats: nextStats })
+  }
+  const discoverOffers = (offers: ShopOffer[]) => {
+    discover('jokers', offers.map((o) => (o.kind === 'joker' ? o.jokerId : null)))
+    discover('gods', offers.map((o) => (o.kind === 'god' ? o.godId : null)))
+    discover('vouchers', offers.map((o) => (o.kind === 'voucher' ? o.voucherId : null)))
+  }
+  const discoverCurrentBoss = () => {
+    const run = get().run
+    if (run) discover('bosses', [run.bosses[run.ante - 1]])
+  }
+
   const soundsFor = (move: Move, round: RoundState, pops: ScorePop[]) => {
     if (move.kind === 'deal_stock' || move.kind === 'recycle') sfx.deal()
     else if (move.kind === 'discard_waste') sfx.discard()
@@ -158,6 +203,7 @@ export const useGame = create<GameStore>((set, get) => {
   }
 
   const afterRoundStateChange = (run: RunState, round: RoundState, pops: ScorePop[]) => {
+    setMusicIntensity({ streak: round.streak, boss: !!round.bossId })
     set({ run, round, selection: null })
     pushPops(set as never, pops)
     if (round.finished) {
@@ -172,6 +218,7 @@ export const useGame = create<GameStore>((set, get) => {
   const finishAndShow = () => {
     const { run, round, stats } = get()
     if (!run || !round) return
+    setMusicIntensity({ streak: 0, boss: false })
     const { run: nextRun, result } = finishRound(run, round)
     if (!result.won) {
       const nextStats: LifetimeStats = {
@@ -186,22 +233,44 @@ export const useGame = create<GameStore>((set, get) => {
       return
     }
     if (result.runWon) {
+      // sticker time: record the deck's highest beaten stake, surface unlocks
+      const unlocks: string[] = []
+      const prevHigh = stats.stakeWins[run.deckId]
+      const newHigh = Math.max(prevHigh ?? -1, run.stake)
+      if (prevHigh === undefined) {
+        const nextDeck = allDeckIds[allDeckIds.indexOf(run.deckId) + 1]
+        if (nextDeck) unlocks.push(`${deckRegistry[nextDeck].name} unlocked!`)
+      }
+      if (newHigh !== prevHigh) {
+        const nextStake = STAKES[newHigh + 1]
+        if (nextStake) unlocks.push(`${nextStake.name} unlocked for the ${deckRegistry[run.deckId].name}!`)
+      }
       const nextStats: LifetimeStats = {
         ...stats,
         runsWon: stats.runsWon + 1,
         bestAnte: Math.max(stats.bestAnte, 9),
         bestPlay: Math.max(stats.bestPlay, nextRun.bestPlay),
+        stakeWins: { ...stats.stakeWins, [run.deckId]: newHigh },
       }
       saveStats(nextStats)
       clearSave() // enterEndless re-saves if the player continues
       sfx.win()
-      set({ run: nextRun, round: null, roundResult: result, screen: 'victory', stats: nextStats, hasSave: false })
+      set({
+        run: nextRun,
+        round: null,
+        roundResult: result,
+        screen: 'victory',
+        stats: nextStats,
+        hasSave: false,
+        victoryUnlocks: unlocks,
+      })
       return
     }
     // Won the blind — go shopping
     sfx.cashOut()
     const { offers } = generateShop(nextRun, 0)
     set({ run: nextRun, round: null, roundResult: result, screen: 'shop', shopOffers: offers, rerolls: 0, pack: null })
+    discoverOffers(offers)
     persist(get)
   }
 
@@ -218,12 +287,39 @@ export const useGame = create<GameStore>((set, get) => {
     message: null,
     roundResult: null,
     stuck: false,
+    victoryUnlocks: [],
 
     shopOffers: [],
     rerolls: 0,
     pack: null,
     skipReward: null,
     settings: loadSettings(),
+    loadout: loadLoadout(),
+
+    setLoadout: (patch) => {
+      const { stats } = get()
+      const loadout = { ...get().loadout, ...patch }
+      // stakes unlock per deck — switching decks clamps to that deck's ceiling
+      const stakes = unlockedStakesFor(loadout.deckId, stats.stakeWins)
+      if (!stakes.some((s) => s.level === loadout.stake)) loadout.stake = stakes[stakes.length - 1]?.level ?? 0
+      try {
+        localStorage.setItem(LOADOUT_KEY, JSON.stringify(loadout))
+      } catch {
+        /* non-fatal */
+      }
+      sfx.click()
+      set({ loadout })
+    },
+
+    quickStart: (seed) => {
+      const { loadout, stats } = get()
+      // clamp to what's actually unlocked in case saved loadout went stale
+      const decks = unlockedDeckIds(stats.stakeWins)
+      const deckId = decks.includes(loadout.deckId) ? loadout.deckId : 'classic'
+      const stakes = unlockedStakesFor(deckId, stats.stakeWins)
+      const stake = stakes.some((s) => s.level === loadout.stake) ? loadout.stake : 0
+      get().newGame(seed, 'standard', deckId, stake)
+    },
 
     newGame: (seed, mode = 'standard', deckId = 'classic', stake = 0) => {
       unlockAudio()
@@ -242,13 +338,16 @@ export const useGame = create<GameStore>((set, get) => {
         selection: null,
         skipReward: null,
         hasSave: true,
+        victoryUnlocks: [],
       })
+      discoverCurrentBoss()
       persist(get)
     },
 
     continueGame: () => {
       const saved = loadGame()
       if (!saved) return
+      setMusicIntensity({ streak: saved.round?.streak ?? 0, boss: !!saved.round?.bossId })
       set({
         run: saved.run,
         round: saved.round,
@@ -261,14 +360,18 @@ export const useGame = create<GameStore>((set, get) => {
         selection: null,
         stuck: saved.round ? !hasAnyUsefulMove(saved.round) : false,
       })
+      discoverCurrentBoss()
+      discoverOffers(get().shopOffers)
     },
 
     abandonRun: () => {
+      setMusicIntensity({ streak: 0, boss: false })
       clearSave()
       set({ run: null, round: null, screen: 'menu', hasSave: false, roundResult: null })
     },
 
     backToMenu: () => {
+      setMusicIntensity({ streak: 0, boss: false })
       persist(get)
       set({ screen: 'menu', hasSave: !!loadGame() })
     },
@@ -295,6 +398,7 @@ export const useGame = create<GameStore>((set, get) => {
       if (!run) return
       const endlessRun = ensureBossForAnte({ ...run, endless: true }, run.ante)
       set({ run: endlessRun, screen: 'blind-select', roundResult: null, hasSave: true })
+      discoverCurrentBoss()
       persist(get)
     },
 
@@ -303,6 +407,7 @@ export const useGame = create<GameStore>((set, get) => {
       if (!run) return
       unlockAudio()
       const { round, run: nextRun } = startRound(run)
+      setMusicIntensity({ streak: 0, boss: !!round.bossId })
       if (round.bossId) sfx.bossSting()
       else sfx.deal()
       set({ run: nextRun, round, screen: 'playing', selection: null, pops: [], lastPlay: null, roundResult: null, stuck: false, skipReward: null })
@@ -505,6 +610,8 @@ export const useGame = create<GameStore>((set, get) => {
           pack,
           shopOffers: shopOffers.map((o) => (o.slot === slot ? { ...o, sold: true } : o)),
         })
+        if (pack?.type === 'god') discover('gods', pack.choices)
+        if (pack?.type === 'joker') discover('jokers', pack.choices)
       }
       persist(get)
     },
@@ -526,6 +633,7 @@ export const useGame = create<GameStore>((set, get) => {
         return o
       })
       set({ run: { ...run, money: run.money - cost }, rerolls: rerolls + 1, shopOffers: merged })
+      discoverOffers(merged)
       persist(get)
     },
 
@@ -564,6 +672,7 @@ export const useGame = create<GameStore>((set, get) => {
 
     leaveShop: () => {
       set({ screen: 'blind-select', shopOffers: [], pack: null, roundResult: null })
+      discoverCurrentBoss()
       persist(get)
     },
 

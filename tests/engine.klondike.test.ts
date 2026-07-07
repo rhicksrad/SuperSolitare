@@ -117,6 +117,52 @@ describe('moves', () => {
     expect(out.state.tableau[1].length).toBe(0)
     expect(out.events.some((e) => e.type === 'empty_column')).toBe(true)
   })
+
+  it('does not award empty_column for shuttling a whole pile between empty columns', () => {
+    const r = freshRound()
+    r.tableau[0] = [{ id: 'S-13', suit: 'spades', rank: 13, faceUp: true }]
+    r.tableau[1] = []
+    // king onto an empty column: source empties but destination fills — net zero
+    const out = applyMove(r, { kind: 'tableau_to_tableau', from: 't0', index: 0, to: 't1' })
+    expect(out.state.tableau[0].length).toBe(0)
+    expect(out.events.some((e) => e.type === 'empty_column')).toBe(false)
+    expect(out.state.stats.emptiedColumns).toBe(0)
+    // and shuttling back scores nothing either
+    const back = applyMove(out.state, { kind: 'tableau_to_tableau', from: 't1', index: 0, to: 't0' })
+    expect(back.events.some((e) => e.type === 'empty_column')).toBe(false)
+  })
+
+  it('still awards empty_column when the whole pile lands on a non-empty column', () => {
+    const r = freshRound()
+    r.tableau[0] = [{ id: 'H-12', suit: 'hearts', rank: 12, faceUp: true }]
+    r.tableau[1] = [{ id: 'S-13', suit: 'spades', rank: 13, faceUp: true }]
+    const out = applyMove(r, { kind: 'tableau_to_tableau', from: 't0', index: 0, to: 't1' })
+    expect(out.events.some((e) => e.type === 'empty_column')).toBe(true)
+  })
+
+  it('tracks the waste fan like real deal-3: shrinks per play, resets per deal', () => {
+    let r = freshRound()
+    expect(r.wasteFan).toBe(0)
+    r = applyMove(r, { kind: 'deal_stock' }).state
+    expect(r.wasteFan).toBe(3)
+    r = applyMove(r, { kind: 'discard_waste' }).state
+    expect(r.wasteFan).toBe(2)
+    // make the waste top playable somewhere to exercise waste_to_tableau
+    const top = r.waste[r.waste.length - 1]
+    r.tableau[0] =
+      top.rank === 13
+        ? [] // kings go to an empty column
+        : [{ id: 'X-test', suit: isRed(top.suit) ? 'spades' : 'hearts', rank: top.rank + 1, faceUp: true }]
+    r = applyMove(r, { kind: 'waste_to_tableau', to: 't0' }).state
+    expect(r.wasteFan).toBe(1)
+    r = applyMove(r, { kind: 'deal_stock' }).state
+    expect(r.wasteFan).toBe(3)
+    // recycle clears the fan
+    let cur = r
+    while (cur.stock.length > 0) cur = applyMove(cur, { kind: 'deal_stock' }).state
+    cur = applyMove(cur, { kind: 'recycle' }).state
+    expect(cur.wasteFan).toBe(0)
+  })
 })
 
 describe('cardChips', () => {

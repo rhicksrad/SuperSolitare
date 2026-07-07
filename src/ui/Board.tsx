@@ -60,7 +60,9 @@ function StockAndWaste() {
   const enhancements = useGame((s) => s.run?.enhancements) ?? {}
 
   const wasteTop = round.waste.length - 1
-  const visible = Math.max(1, round.rules.wasteVisible ?? 3)
+  // The fan shrinks as dealt cards are played (3 → 2 → 1); once it's spent,
+  // only the previous top card shows. Bosses can cap visibility (the-fog).
+  const visible = Math.min(Math.max(1, round.wasteFan), round.rules.wasteVisible ?? Infinity)
   const fan = round.waste.slice(Math.max(0, round.waste.length - visible))
 
   return (

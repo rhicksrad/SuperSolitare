@@ -441,7 +441,7 @@ export function applyGodCard(run: RunState, round: RoundState | null, godId: str
       if (round.waste.length === 0) return { run, round, message: 'The waste is already empty', ok: false }
       const burned = [...round.burned, ...round.waste.map((c) => ({ ...c }))]
       const count = round.waste.length
-      const nextRound = { ...round, waste: [], burned }
+      const nextRound = { ...round, waste: [], wasteFan: 0, burned }
       const onFoundations = nextRound.foundations.reduce((n, p) => n + p.length, 0)
       if (onFoundations + nextRound.burned.length === 52) nextRound.finished = true
       return { run: consume(run), round: nextRound, message: `Artemis burns ${count} card${count === 1 ? '' : 's'}`, ok: true }

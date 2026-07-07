@@ -4,7 +4,7 @@ export function GameOverScreen() {
   const run = useGame((s) => s.run)
   const result = useGame((s) => s.roundResult)
   const abandonRun = useGame((s) => s.abandonRun)
-  const newGame = useGame((s) => s.newGame)
+  const quickStart = useGame((s) => s.quickStart)
   if (!run) return null
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -27,10 +27,10 @@ export function GameOverScreen() {
           <div className="text-right font-mono text-xs self-center break-all">{run.seed}</div>
         </div>
         <div className="flex gap-3 justify-center">
-          <button className="rounded-xl bg-[var(--gold)] text-slate-900 font-bold px-6 py-3 hover:brightness-110" onClick={() => newGame()}>
+          <button className="btn btn-gold px-6 py-3" onClick={() => quickStart()}>
             New Run
           </button>
-          <button className="rounded-xl bg-slate-700/70 font-bold px-6 py-3 hover:bg-slate-600/70" onClick={abandonRun}>
+          <button className="btn btn-dark px-6 py-3" onClick={abandonRun}>
             Menu
           </button>
         </div>
@@ -42,8 +42,9 @@ export function GameOverScreen() {
 export function VictoryScreen() {
   const run = useGame((s) => s.run)
   const abandonRun = useGame((s) => s.abandonRun)
-  const newGame = useGame((s) => s.newGame)
+  const quickStart = useGame((s) => s.quickStart)
   const enterEndless = useGame((s) => s.enterEndless)
+  const victoryUnlocks = useGame((s) => s.victoryUnlocks)
   if (!run) return null
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -52,10 +53,24 @@ export function VictoryScreen() {
           Victory!
         </h1>
         <p className="text-slate-300">All 8 antes conquered. The deck bows to you.</p>
-        <button
-          className="rounded-xl border-2 border-[var(--gold)] text-[var(--gold)] font-bold px-6 py-3 hover:bg-[var(--gold)]/10 cashout-glow"
-          onClick={enterEndless}
-        >
+        {victoryUnlocks.map((line, i) => (
+          <div
+            key={line}
+            className="panel unlock-pop px-4 py-2 font-bold text-emerald-300 border-emerald-400/40"
+            style={{ animationDelay: `${0.4 + i * 0.35}s` }}
+          >
+            ★ {line}
+          </div>
+        ))}
+        {victoryUnlocks.length > 0 && (
+          <p
+            className="text-xs text-slate-400 -mt-3 unlock-pop"
+            style={{ animationDelay: `${0.4 + victoryUnlocks.length * 0.35}s` }}
+          >
+            Enable it from the main menu before your next run.
+          </p>
+        )}
+        <button className="btn btn-gold px-6 py-3 cashout-glow" onClick={enterEndless}>
           Continue in Endless Mode ∞
         </button>
         <div className="panel p-4 grid grid-cols-2 gap-2 text-sm">
@@ -69,10 +84,10 @@ export function VictoryScreen() {
           <div className="text-right font-mono text-xs self-center break-all">{run.seed}</div>
         </div>
         <div className="flex gap-3 justify-center">
-          <button className="rounded-xl bg-[var(--gold)] text-slate-900 font-bold px-6 py-3 hover:brightness-110" onClick={() => newGame()}>
+          <button className="btn btn-gold px-6 py-3" onClick={() => quickStart()}>
             Run It Back
           </button>
-          <button className="rounded-xl bg-slate-700/70 font-bold px-6 py-3 hover:bg-slate-600/70" onClick={abandonRun}>
+          <button className="btn btn-dark px-6 py-3" onClick={abandonRun}>
             Menu
           </button>
         </div>

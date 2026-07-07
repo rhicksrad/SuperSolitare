@@ -35,6 +35,8 @@ export interface RoundState {
   foundations: Card[][] // 4 piles, built A -> K by suit
   stock: Card[]
   waste: Card[]
+  /** cards still fanned from the latest stock deal; shrinks as waste is played (3 → 2 → 1) */
+  wasteFan: number
   burned: Card[] // discarded-from-waste cards, out of play this round
   stats: {
     foundationPlays: number
@@ -103,6 +105,7 @@ export function dealRound(
     foundations: [[], [], [], []],
     stock,
     waste: [],
+    wasteFan: 0,
     burned: [],
     stats: { foundationPlays: 0, reveals: 0, emptiedColumns: 0, stockDeals: 0 },
     boostCharges: 0,
@@ -229,8 +232,8 @@ function flipTop(state: RoundState, col: number, events: MoveEvent[]) {
   }
 }
 
-function checkEmptied(state: RoundState, col: number, hadCards: boolean, events: MoveEvent[]) {
-  if (hadCards && state.tableau[col].length === 0) {
+function checkEmptied(state: RoundState, col: number, eligible: boolean, events: MoveEvent[]) {
+  if (eligible && state.tableau[col].length === 0) {
     state.stats.emptiedColumns++
     events.push({ type: 'empty_column', column: col })
   }
@@ -259,6 +262,7 @@ export function applyMove(prev: RoundState, move: Move): ApplyResult {
         state.waste.push(card)
       }
       state.stats.stockDeals++
+      state.wasteFan = n
       state.streak = 0
       events.push({ type: 'stock_deal' })
       break
@@ -269,6 +273,7 @@ export function applyMove(prev: RoundState, move: Move): ApplyResult {
         .reverse()
         .map((c) => ({ ...c, faceUp: false }))
       state.waste = []
+      state.wasteFan = 0
       state.recyclesLeft--
       state.streak = 0
       events.push({ type: 'recycle' })
@@ -276,6 +281,7 @@ export function applyMove(prev: RoundState, move: Move): ApplyResult {
     }
     case 'discard_waste': {
       const card = state.waste.pop()!
+      state.wasteFan = Math.max(0, state.wasteFan - 1)
       state.burned.push(card)
       state.discardsLeft--
       events.push({ type: 'discard', card: { ...card } })
@@ -286,10 +292,13 @@ export function applyMove(prev: RoundState, move: Move): ApplyResult {
       const fromCol = tableauIndex(move.from)
       const toCol = tableauIndex(move.to)
       const from = state.tableau[fromCol]
+      // Relocating a whole pile onto an empty column nets zero empty columns —
+      // no reward, or a king could shuttle between two empties for points.
+      const netEmpty = !(move.index === 0 && state.tableau[toCol].length === 0)
       const moving = from.splice(move.index)
       state.tableau[toCol].push(...moving)
       flipTop(state, fromCol, events)
-      checkEmptied(state, fromCol, true, events)
+      checkEmptied(state, fromCol, netEmpty, events)
       break
     }
     case 'tableau_to_foundation': {
@@ -305,11 +314,13 @@ export function applyMove(prev: RoundState, move: Move): ApplyResult {
     }
     case 'waste_to_tableau': {
       const card = state.waste.pop()!
+      state.wasteFan = Math.max(0, state.wasteFan - 1)
       state.tableau[tableauIndex(move.to)].push(card)
       break
     }
     case 'waste_to_foundation': {
       const card = state.waste.pop()!
+      state.wasteFan = Math.max(0, state.wasteFan - 1)
       state.foundations[foundationIndex(move.to)].push(card)
       state.stats.foundationPlays++
       events.push({ type: 'foundation_play', card: { ...card }, fromWaste: true })

@@ -1,6 +1,7 @@
 import { bossRegistry } from '../engine/bosses'
 import { blindTarget, BLIND_REWARD, FINAL_ANTE, skipTagFor } from '../engine/run'
 import { useGame } from '../state/store'
+import { BossEmblem } from './ArtCards'
 import { GodTray, JokerTray, LevelsBadge, MoneyBadge, VoucherStrip } from './Trays'
 
 const BLIND_LABEL = ['Small Blind', 'Big Blind', 'Boss Blind']
@@ -57,28 +58,24 @@ export function BlindSelect() {
             >
               <div className="text-sm uppercase tracking-wide text-slate-400">{BLIND_LABEL[idx]}</div>
               {blind === 'boss' && (
-                <div>
-                  <div className="text-lg font-bold text-rose-300">{boss.name}</div>
-                  <div className="text-xs text-slate-300">{boss.description}</div>
+                <div className="flex items-center gap-3">
+                  <BossEmblem id={boss.id} size={56} />
+                  <div>
+                    <div className="text-lg font-bold text-rose-300">{boss.name}</div>
+                    <div className="text-xs text-slate-300">{boss.description}</div>
+                  </div>
                 </div>
               )}
               <div className="text-2xl font-extrabold big-number">{target.toLocaleString()}</div>
               <div className="text-xs text-slate-400">Reward ${BLIND_REWARD[blind]} + bonuses</div>
               <div className="mt-auto flex gap-2 pt-2">
                 {isCurrent && (
-                  <button
-                    className="flex-1 rounded-lg bg-[var(--gold)] text-slate-900 font-bold py-2 hover:brightness-110"
-                    onClick={playBlind}
-                    data-testid={`play-${blind}`}
-                  >
+                  <button className="btn btn-gold flex-1 py-2" onClick={playBlind} data-testid={`play-${blind}`}>
                     Play
                   </button>
                 )}
                 {isCurrent && blind !== 'boss' && (
-                  <button
-                    className="rounded-lg bg-slate-700/70 px-3 py-2 text-sm font-semibold hover:bg-slate-600/70 has-tip"
-                    onClick={skipCurrentBlind}
-                  >
+                  <button className="btn btn-dark px-3 py-2 text-sm has-tip" onClick={skipCurrentBlind}>
                     Skip · {skipTagFor(run, idx).name}
                     <span className="tip">
                       <span className="font-bold">{skipTagFor(run, idx).name}</span>

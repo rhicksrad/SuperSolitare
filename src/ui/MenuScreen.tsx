@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { allDeckIds, deckRegistry, STAKES } from '../engine/decks'
-import { todaysDailySeed } from '../engine/save'
+import { deckRegistry, deckSticker, unlockedDeckIds, unlockedStakesFor } from '../engine/decks'
 import { useGame } from '../state/store'
+import { DeckBack } from './ArtCards'
 
 const DRIFT_CARDS = [
   { glyph: '♠', left: '6%', size: 90, dur: 34, delay: 0 },
@@ -13,14 +12,17 @@ const DRIFT_CARDS = [
 ]
 
 export function MenuScreen() {
-  const newGame = useGame((s) => s.newGame)
   const continueGame = useGame((s) => s.continueGame)
   const hasSave = useGame((s) => s.hasSave)
-  const stats = useGame((s) => s.stats)
   const goTo = useGame((s) => s.goTo)
-  const [seed, setSeed] = useState('')
-  const [deckId, setDeckId] = useState('classic')
-  const [stake, setStake] = useState(0)
+  const stats = useGame((s) => s.stats)
+  const loadout = useGame((s) => s.loadout)
+  const setLoadout = useGame((s) => s.setLoadout)
+  const quickStart = useGame((s) => s.quickStart)
+
+  const decks = unlockedDeckIds(stats.stakeWins)
+  const stakes = unlockedStakesFor(loadout.deckId, stats.stakeWins)
+  const showLoadout = decks.length > 1 || stakes.length > 1
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-8">
@@ -42,119 +44,98 @@ export function MenuScreen() {
         </div>
       ))}
 
-      <div className="max-w-2xl w-full flex flex-col gap-5 text-center relative z-10">
+      <div className="max-w-md w-full flex flex-col gap-6 text-center relative z-10">
         <div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight drop-shadow-lg">
+          <h1 className="game-logo inline-block text-5xl sm:text-7xl font-bold tracking-tight text-slate-50">
             Super<span style={{ color: 'var(--gold)' }}>Solitaire</span>
           </h1>
-          <p className="mt-2 text-slate-400">
-            Chain foundation plays for chips × mult. Beat escalating blinds. Build an engine. Survive 8 antes.
+          <p className="mt-3 text-slate-400">
+            Chain foundation plays for <span style={{ color: 'var(--chips)' }}>chips</span>
+            {' × '}
+            <span style={{ color: 'var(--mult)' }}>mult</span>. Beat escalating blinds. Survive 8 antes.
           </p>
         </div>
 
-        <div className="panel p-4 text-left">
-          <div className="text-xs uppercase tracking-wide text-slate-400 mb-2">Deck</div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {allDeckIds.map((id) => {
-              const def = deckRegistry[id]
-              return (
-                <button
-                  key={id}
-                  onClick={() => setDeckId(id)}
-                  className={`rounded-lg p-2 text-left border text-xs transition-colors ${
-                    deckId === id
-                      ? 'border-[var(--gold)] bg-[var(--gold)]/10'
-                      : 'border-slate-600/50 bg-slate-800/50 hover:bg-slate-700/50'
-                  }`}
-                  data-testid={`deck-${id}`}
-                >
-                  <div className="font-bold">{def.name.replace(' Deck', '')}</div>
-                  <div className="text-slate-400 mt-0.5 leading-snug">{def.description}</div>
-                </button>
-              )
-            })}
-          </div>
-          <div className="text-xs uppercase tracking-wide text-slate-400 mt-3 mb-2">Stake</div>
-          <div className="flex gap-2">
-            {STAKES.map((s) => (
-              <button
-                key={s.level}
-                onClick={() => setStake(s.level)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors has-tip ${
-                  stake === s.level
-                    ? s.level === 2
-                      ? 'border-[var(--gold)] text-[var(--gold)] bg-[var(--gold)]/10'
-                      : s.level === 1
-                        ? 'border-rose-400 text-rose-300 bg-rose-400/10'
-                        : 'border-slate-300 text-slate-200 bg-slate-100/10'
-                    : 'border-slate-600/50 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {s.name}
-                <span className="tip">{s.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {hasSave && (
-            <button
-              className="rounded-xl bg-emerald-500 text-slate-900 font-bold py-3 text-lg hover:brightness-110"
-              onClick={continueGame}
-            >
+            <button className="btn btn-green py-3 text-lg" onClick={continueGame}>
               Continue Run
             </button>
           )}
-          <button
-            className="rounded-xl bg-[var(--gold)] text-slate-900 font-bold py-3 text-lg hover:brightness-110"
-            onClick={() => newGame(seed || undefined, 'standard', deckId, stake)}
-            data-testid="new-run"
-          >
+          <button className="btn btn-gold py-3 text-lg" onClick={() => quickStart()} data-testid="new-run">
             New Run
           </button>
-          <div className="flex gap-2">
-            <button
-              className="flex-1 rounded-xl bg-slate-700/70 font-bold py-2.5 hover:bg-slate-600/70 has-tip"
-              onClick={() => newGame(undefined, 'daily', deckId, stake)}
-            >
-              Daily Run
-              <span className="tip">Everyone gets the same seed today: {todaysDailySeed()}</span>
-            </button>
-            <button className="flex-1 rounded-xl bg-slate-700/70 font-bold py-2.5 hover:bg-slate-600/70" onClick={() => goTo('collection')}>
-              Collection
-            </button>
-            <button className="flex-1 rounded-xl bg-slate-700/70 font-bold py-2.5 hover:bg-slate-600/70" onClick={() => goTo('settings')}>
-              Settings
-            </button>
-          </div>
-          <input
-            className="rounded-lg bg-slate-800/80 border border-slate-600/50 px-3 py-2 text-sm text-center placeholder:text-slate-500"
-            placeholder="Custom seed (optional)"
-            value={seed}
-            onChange={(e) => setSeed(e.target.value)}
-            aria-label="Custom seed"
-          />
         </div>
 
-        <div className="panel p-3 grid grid-cols-4 gap-2 text-sm">
-          <div>
-            <div className="text-slate-400 text-xs">Runs</div>
-            <div className="font-semibold big-number">{stats.runsStarted}</div>
+        {showLoadout && (
+          <div className="panel p-3 text-left flex flex-col gap-2">
+            {decks.length > 1 && (
+              <div className="flex items-start gap-2 flex-wrap">
+                <span className="text-[11px] uppercase tracking-wide text-slate-400 w-10 shrink-0 mt-4">Deck</span>
+                {decks.map((id) => {
+                  const sticker = deckSticker(id, stats.stakeWins)
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setLoadout({ deckId: id })}
+                      className={`has-tip rounded-md p-1.5 flex flex-col items-center gap-1 text-[11px] font-bold border-2 transition-colors ${
+                        loadout.deckId === id
+                          ? 'border-[var(--gold)] text-[var(--gold)] bg-[var(--gold)]/10'
+                          : 'border-slate-600/50 text-slate-400 hover:text-slate-200'
+                      }`}
+                      data-testid={`deck-${id}`}
+                    >
+                      <span className="relative">
+                        <DeckBack id={id} width={40} />
+                        {sticker && (
+                          <span
+                            className={`stake-sticker stake-sticker-${sticker.level} absolute -top-1 -right-1`}
+                            aria-label={`Beaten at ${sticker.name}`}
+                          />
+                        )}
+                      </span>
+                      {deckRegistry[id].name.replace(' Deck', '')}
+                      <span className="tip">
+                        {deckRegistry[id].description}
+                        {sticker && <span className="block mt-1 text-slate-400">Best win: {sticker.name}</span>}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            {stakes.length > 1 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] uppercase tracking-wide text-slate-400 w-10 shrink-0">Stake</span>
+                {stakes.map((s) => (
+                  <button
+                    key={s.level}
+                    onClick={() => setLoadout({ stake: s.level })}
+                    className={`has-tip rounded-full px-2.5 py-1 text-xs font-bold border-2 transition-colors ${
+                      loadout.stake === s.level
+                        ? s.level === 2
+                          ? 'border-[var(--gold)] text-[var(--gold)] bg-[var(--gold)]/10'
+                          : s.level === 1
+                            ? 'border-rose-400 text-rose-300 bg-rose-400/10'
+                            : 'border-slate-300 text-slate-200 bg-slate-100/10'
+                        : 'border-slate-600/50 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {s.name.replace(' Stake', '')}
+                    <span className="tip">{s.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-slate-400 text-xs">Wins</div>
-            <div className="font-semibold big-number">{stats.runsWon}</div>
-          </div>
-          <div>
-            <div className="text-slate-400 text-xs">Best ante</div>
-            <div className="font-semibold big-number">{stats.bestAnte || '—'}</div>
-          </div>
-          <div>
-            <div className="text-slate-400 text-xs">Best play</div>
-            <div className="font-semibold big-number">{stats.bestPlay ? stats.bestPlay.toLocaleString() : '—'}</div>
-          </div>
-        </div>
+        )}
+
+        <button
+          className="text-sm text-slate-500 hover:text-slate-300 underline underline-offset-4 mx-auto"
+          onClick={() => goTo('settings')}
+        >
+          Settings, daily run & collection
+        </button>
       </div>
     </div>
   )
