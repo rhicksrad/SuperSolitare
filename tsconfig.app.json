@@ -22,7 +22,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "types": ["vitest"]
+    "types": ["vite/client", "vitest"]
   },
   "include": ["src"]
 }

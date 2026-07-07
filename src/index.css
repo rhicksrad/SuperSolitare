@@ -446,6 +446,62 @@ button {
   filter: saturate(0.7);
 }
 
+/* booster packs: crimped foil pouches, tinted per pack type */
+.pcard-pack {
+  background: linear-gradient(180deg, var(--pack-a), var(--pack-b));
+}
+.pack-crimp {
+  height: 6px;
+  margin: 1px 3px 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--pack-edge) 0 3px, rgba(0, 0, 0, 0.3) 3px 6px);
+}
+.pack-crimp-b {
+  margin: 4px 3px 1px;
+}
+.pcard-art-pack {
+  margin: 0 6px;
+  background: radial-gradient(circle at 50% 30%, var(--pack-glow), var(--pack-deep) 78%);
+}
+.pcard-name-pack {
+  color: var(--pack-text);
+}
+.pcard-title-pack {
+  color: var(--pack-sub);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pcard-opened .pcard-art-pack {
+  filter: saturate(0.5);
+}
+.pack-theme-card {
+  --pack-a: #2c5390;
+  --pack-b: #182f52;
+  --pack-edge: #79aef2;
+  --pack-glow: #35619f;
+  --pack-deep: #12203c;
+  --pack-text: #bcd9ff;
+  --pack-sub: #7c9cc9;
+}
+.pack-theme-god {
+  --pack-a: #8a651c;
+  --pack-b: #4c370e;
+  --pack-edge: #ffd166;
+  --pack-glow: #9c741f;
+  --pack-deep: #33250a;
+  --pack-text: #ffe08a;
+  --pack-sub: #c9a955;
+}
+.pack-theme-joker {
+  --pack-a: #8d2540;
+  --pack-b: #4e1425;
+  --pack-edge: #ff8ba0;
+  --pack-glow: #93304a;
+  --pack-deep: #360d1a;
+  --pack-text: #ffc0cb;
+  --pack-sub: #cb7f92;
+}
+
 /* deck backs shown in the loadout picker & collection */
 .deck-back {
   border: 2px solid var(--ink);

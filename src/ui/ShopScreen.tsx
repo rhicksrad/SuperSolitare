@@ -6,7 +6,9 @@ import { EDITION_META } from '../engine/types'
 import { voucherRegistry } from '../engine/vouchers'
 import { useGame } from '../state/store'
 import { CardView } from './CardView'
-import { GodCard, JokerCard, VoucherCard } from './ArtCards'
+import { GodCard, JokerCard, PackCard, VoucherCard } from './ArtCards'
+import { packArt } from './art'
+import { PixelSprite } from './sprites'
 import { GodTray, JokerTray, LevelsBadge, MoneyBadge, VoucherStrip } from './Trays'
 
 function ResultBanner() {
@@ -45,8 +47,9 @@ function PackModal() {
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="panel p-6 max-w-2xl w-full">
-        <h2 className="text-xl font-bold mb-1">
-          {pack.type === 'card' ? 'Card Pack' : pack.type === 'god' ? 'Pantheon Pack' : 'Joker Pack'}
+        <h2 className="text-xl font-bold mb-1 flex items-center gap-2">
+          <PixelSprite sprite={packArt(pack.type)} size={30} />
+          {PACK_META[pack.type].name}
         </h2>
         <p className="text-sm text-slate-400 mb-4">Choose one</p>
         <div className={pack.type === 'card' ? 'grid grid-cols-3 gap-4' : 'flex justify-center gap-4 flex-wrap'}>
@@ -99,6 +102,7 @@ function PriceButton({
   canAfford,
   onBuy,
   color = 'btn-gold',
+  buyLabel = 'Buy',
   testid,
 }: {
   sold: boolean
@@ -107,6 +111,7 @@ function PriceButton({
   canAfford: boolean
   onBuy: () => void
   color?: string
+  buyLabel?: string
   testid?: string
 }) {
   return (
@@ -116,7 +121,7 @@ function PriceButton({
       disabled={sold || !canAfford}
       data-testid={testid}
     >
-      {sold ? soldLabel : `Buy $${price}`}
+      {sold ? soldLabel : `${buyLabel} $${price}`}
     </button>
   )
 }
@@ -231,17 +236,20 @@ export function ShopScreen() {
             }
             const meta = PACK_META[offer.packType]
             return (
-              <div key={offer.slot} className={`panel p-3 flex flex-col w-[150px] ${offer.sold ? 'opacity-40' : ''}`}>
-                <div className="font-bold text-sm text-sky-200">{meta.name}</div>
-                <div className="text-[10px] text-slate-400">booster pack</div>
-                <div className="text-xs text-slate-300 mt-1 flex-1">{meta.description}</div>
-                <button
-                  className="btn btn-dark mt-2 w-full py-1.5 text-sm"
-                  onClick={() => buyOffer(offer.slot)}
-                  disabled={offer.sold || run.money < offer.price}
-                >
-                  {offer.sold ? 'Opened' : `Open $${offer.price}`}
-                </button>
+              <div key={offer.slot} className={`flex flex-col w-[112px] ${offer.sold ? 'opacity-40' : ''}`}>
+                <div className="flex justify-center">
+                  <PackCard type={offer.packType} opened={offer.sold} />
+                </div>
+                <div className="text-[11px] text-slate-300 mt-1 text-center leading-snug min-h-8">{meta.description}</div>
+                <PriceButton
+                  sold={offer.sold ?? false}
+                  soldLabel="Opened"
+                  buyLabel="Open"
+                  price={offer.price}
+                  canAfford={run.money >= offer.price}
+                  onBuy={() => buyOffer(offer.slot)}
+                  color="btn-dark"
+                />
               </div>
             )
           })}

@@ -14,7 +14,7 @@ import type { LifetimeStats } from '../engine/save'
 import type { ScorePop } from '../engine/scoring'
 import { bossBlockReason, performMove } from '../engine/scoring'
 import type { RunState } from '../engine/types'
-import { configureAudio, setMusicIntensity, sfx, unlockAudio } from '../ui/audio'
+import { configureAudio, preloadMusic, roundMusicScene, setMusicScene, sfx, unlockAudio } from '../ui/audio'
 
 export type Screen =
   | 'menu'
@@ -203,7 +203,6 @@ export const useGame = create<GameStore>((set, get) => {
   }
 
   const afterRoundStateChange = (run: RunState, round: RoundState, pops: ScorePop[]) => {
-    setMusicIntensity({ streak: round.streak, boss: !!round.bossId })
     set({ run, round, selection: null })
     pushPops(set as never, pops)
     if (round.finished) {
@@ -218,7 +217,6 @@ export const useGame = create<GameStore>((set, get) => {
   const finishAndShow = () => {
     const { run, round, stats } = get()
     if (!run || !round) return
-    setMusicIntensity({ streak: 0, boss: false })
     const { run: nextRun, result } = finishRound(run, round)
     if (!result.won) {
       const nextStats: LifetimeStats = {
@@ -347,7 +345,7 @@ export const useGame = create<GameStore>((set, get) => {
     continueGame: () => {
       const saved = loadGame()
       if (!saved) return
-      setMusicIntensity({ streak: saved.round?.streak ?? 0, boss: !!saved.round?.bossId })
+      unlockAudio()
       set({
         run: saved.run,
         round: saved.round,
@@ -365,13 +363,11 @@ export const useGame = create<GameStore>((set, get) => {
     },
 
     abandonRun: () => {
-      setMusicIntensity({ streak: 0, boss: false })
       clearSave()
       set({ run: null, round: null, screen: 'menu', hasSave: false, roundResult: null })
     },
 
     backToMenu: () => {
-      setMusicIntensity({ streak: 0, boss: false })
       persist(get)
       set({ screen: 'menu', hasSave: !!loadGame() })
     },
@@ -407,7 +403,6 @@ export const useGame = create<GameStore>((set, get) => {
       if (!run) return
       unlockAudio()
       const { round, run: nextRun } = startRound(run)
-      setMusicIntensity({ streak: 0, boss: !!round.bossId })
       if (round.bossId) sfx.bossSting()
       else sfx.deal()
       set({ run: nextRun, round, screen: 'playing', selection: null, pops: [], lastPlay: null, roundResult: null, stuck: false, skipReward: null })
@@ -682,3 +677,16 @@ export const useGame = create<GameStore>((set, get) => {
 
 // apply persisted audio preferences once at startup
 configureAudio(useGame.getState().settings)
+
+// music follows the game: lounge on menus/shop, a distinct track for every
+// round (ante × blind); between rounds, warm the current ante's three tracks
+// so the next blind's music starts without a network wait
+useGame.subscribe((state) => {
+  const { run } = state
+  if (state.screen === 'playing' && state.round && run) {
+    setMusicScene(roundMusicScene(run.ante, run.blindIndex))
+  } else {
+    setMusicScene('menu')
+    if (run) preloadMusic([0, 1, 2].map((blind) => roundMusicScene(run.ante, blind)))
+  }
+})

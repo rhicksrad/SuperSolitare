@@ -1622,6 +1622,67 @@ export function deckArt(id: string): SpriteDef {
   return DECK_ART[id] ?? DEFAULT_ART
 }
 
+// --------------------------------------------------------------------- packs
+// Booster pack faces, keyed by PackType (engine/shop.ts).
+
+export const PACK_ART: Record<string, SpriteDef> = {
+  card: {
+    // a deck card getting the sparkle treatment
+    grid: [
+      '..........Y.',
+      '.WWWWWWW.YGY',
+      '.WWWWWWW..Y.',
+      '.WRR.RRW....',
+      '.WRRRRRW....',
+      '.WWRRRWW....',
+      '.WWWRWWW..G.',
+      '.WWWWWWW.GGG',
+      '.WWWWWWW..G.',
+      '.WWWWWWW....',
+      '.Wwwwwww....',
+      '............',
+    ],
+  },
+  god: {
+    // a temple of the pantheon
+    grid: [
+      '.....YY.....',
+      '...GGGGGG...',
+      '.GGGGGGGGGG.',
+      'WWWWWWWWWWWW',
+      '.W..W..W..W.',
+      '.W..W..W..W.',
+      '.W..W..W..W.',
+      '.W..W..W..W.',
+      '.W..W..W..W.',
+      'WWWWWWWWWWWW',
+      'wwwwwwwwwwww',
+      '............',
+    ],
+  },
+  joker: {
+    // a jester cap, bells up
+    grid: [
+      '.Y...YY...Y.',
+      '.R...GG...P.',
+      '.RR..GG..PP.',
+      '.RR.GGGG.PP.',
+      '..RRGGGGPP..',
+      '..RRRGGPPP..',
+      '...RRGGPP...',
+      '..WWWWWWWW..',
+      '..wwwwwwww..',
+      '............',
+      '.R....G...P.',
+      '............',
+    ],
+  },
+}
+
+export function packArt(type: string): SpriteDef {
+  return PACK_ART[type] ?? DEFAULT_ART
+}
+
 // ----------------------------------------------------------------- face cards
 // Court portraits for J/Q/K. The 'A' garment pixels are recolored per suit
 // (red suits get crimson robes, black suits navy) by CardView at render time.

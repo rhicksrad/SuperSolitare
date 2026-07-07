@@ -43,8 +43,9 @@ test('full loop: menu → blind → play → cash out → shop → next blind', 
   await expect(page.getByTestId('cash-out')).toContainText('Cash Out')
   await page.getByTestId('cash-out').click()
 
-  // shop: money was paid out, offers visible
-  await expect(page.getByText('The Shop')).toBeVisible()
+  // shop: money was paid out, offers visible (heading role: voucher blurbs can
+  // also contain the words "the shop", which trips strict mode)
+  await expect(page.getByRole('heading', { name: 'The Shop' })).toBeVisible()
   await expect(page.getByText('Blind beaten!')).toBeVisible()
   const money = await page.evaluate(() => window.__game.getState().run?.money ?? 0)
   expect(money).toBeGreaterThan(4)

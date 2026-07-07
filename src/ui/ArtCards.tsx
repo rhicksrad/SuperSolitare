@@ -1,16 +1,19 @@
-// Card frames for jokers, god cards, vouchers, and boss emblems — each renders
-// its pixel sprite in a themed frame so every collectible reads as a real
-// physical object: jokers are paper playing cards (a "J" card, Balatro-style),
-// gods are gilded tarot cards, vouchers are punched tickets, bosses are seals.
+// Card frames for jokers, god cards, vouchers, packs, and boss emblems — each
+// renders its pixel sprite in a themed frame so every collectible reads as a
+// real physical object: jokers are paper playing cards (a "J" card,
+// Balatro-style), gods are gilded tarot cards, vouchers are punched tickets,
+// packs are crimped foil pouches, bosses are seals.
 
 import type { ReactNode } from 'react'
 import { describeJoker, jokerRegistry, newJokerInstance } from '../engine/jokers'
 import { godRegistry } from '../engine/gods'
 import { bossRegistry } from '../engine/bosses'
 import { voucherRegistry } from '../engine/vouchers'
+import { PACK_META } from '../engine/shop'
+import type { PackType } from '../engine/shop'
 import type { JokerInstance } from '../engine/types'
 import { EDITION_META } from '../engine/types'
-import { bossArt, deckArt, godArt, jokerArt, MYSTERY_ART, voucherArt } from './art'
+import { bossArt, deckArt, godArt, jokerArt, MYSTERY_ART, packArt, voucherArt } from './art'
 import { PixelSprite } from './sprites'
 
 /** Shared "?" face for undiscovered collection entries */
@@ -199,6 +202,44 @@ export function VoucherCard({
         </div>
         {def.description}
         <div className="mt-1 text-slate-400">Permanent for this run</div>
+        {tip}
+      </div>
+    </Tag>
+  )
+}
+
+export function PackCard({
+  type,
+  opened,
+  tip,
+  onClick,
+}: {
+  type: PackType
+  opened?: boolean
+  tip?: ReactNode
+  onClick?: () => void
+}) {
+  const meta = PACK_META[type]
+  const Tag = (onClick ? 'button' : 'div') as 'button'
+  return (
+    <Tag
+      className={`pcard pcard-pack pack-theme-${type} has-tip ${opened ? 'pcard-opened' : ''}`}
+      tabIndex={0}
+      onClick={onClick}
+      type={onClick ? 'button' : undefined}
+    >
+      <div className="pack-crimp" aria-hidden />
+      <div className="pcard-art pcard-art-pack">
+        <PixelSprite sprite={packArt(type)} size="78%" className="pcard-sprite" />
+      </div>
+      <div className="pcard-name pcard-name-pack">{meta.name}</div>
+      <div className="pcard-title pcard-title-pack">{opened ? 'opened' : 'booster pack'}</div>
+      <div className="pack-crimp pack-crimp-b" aria-hidden />
+      <div className="tip">
+        <div className="font-bold mb-1">
+          {meta.name} <span className="text-sky-300">· booster</span>
+        </div>
+        {meta.description}
         {tip}
       </div>
     </Tag>

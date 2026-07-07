@@ -6,8 +6,9 @@ import { bossRegistry } from '../src/engine/bosses'
 import { allDeckIds } from '../src/engine/decks'
 import { allGodIds } from '../src/engine/gods'
 import { allJokerIds } from '../src/engine/jokers'
+import { PACK_META } from '../src/engine/shop'
 import { allVoucherIds } from '../src/engine/vouchers'
-import { BOSS_ART, DECK_ART, FACE_ART, GOD_ART, JOKER_ART, MYSTERY_ART, VOUCHER_ART } from '../src/ui/art'
+import { BOSS_ART, DECK_ART, FACE_ART, GOD_ART, JOKER_ART, MYSTERY_ART, PACK_ART, VOUCHER_ART } from '../src/ui/art'
 import type { SpriteDef } from '../src/ui/palette'
 import { BASE_PALETTE } from '../src/ui/palette'
 
@@ -55,8 +56,14 @@ describe('pixel art registry', () => {
     }
   })
 
+  it('covers every pack type', () => {
+    for (const type of Object.keys(PACK_META)) {
+      expect(PACK_ART[type], `missing pack art: ${type}`).toBeTruthy()
+    }
+  })
+
   it('all sprites are well-formed rectangles with mapped colors', () => {
-    const all = { ...JOKER_ART, ...GOD_ART, ...BOSS_ART, ...VOUCHER_ART, ...FACE_ART, ...DECK_ART, mystery: MYSTERY_ART }
+    const all = { ...JOKER_ART, ...GOD_ART, ...BOSS_ART, ...VOUCHER_ART, ...FACE_ART, ...DECK_ART, ...PACK_ART, mystery: MYSTERY_ART }
     for (const [id, def] of Object.entries(all)) {
       validateSprite(id, def)
     }
