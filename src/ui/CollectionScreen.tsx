@@ -1,6 +1,8 @@
 // The compendium. Undiscovered entries show as "?" until you encounter them
 // in a run; decks show unlock state and their highest-beaten-stake sticker.
+// The Sound Test unlocks a round's track once your best run reaches its ante.
 
+import { useState } from 'react'
 import { bossRegistry } from '../engine/bosses'
 import { ENHANCEMENTS } from '../engine/cards'
 import { allDeckIds, deckRegistry, deckSticker, unlockedDeckIds } from '../engine/decks'
@@ -9,7 +11,10 @@ import { jokerRegistry } from '../engine/jokers'
 import { EDITION_META } from '../engine/types'
 import { allVoucherIds, voucherRegistry } from '../engine/vouchers'
 import { useGame } from '../state/store'
+import { TRACK_INFO } from './audio'
+import { CASSETTE_ART, MYSTERY_ART } from './art'
 import { BossEmblem, DeckBack, GodCard, JokerCard, VoucherCard } from './ArtCards'
+import { PixelSprite } from './sprites'
 
 function Section({ title, children, grid }: { title: string; children: React.ReactNode; grid?: boolean }) {
   return (
@@ -33,6 +38,82 @@ function Entry({ name, sub, desc, accent }: { name: string; sub?: string; desc: 
 }
 
 const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3 }
+
+// ----------------------------------------------------------------- sound test
+
+const BLIND_LABEL = { small: 'Small Blind', big: 'Big Blind', boss: 'Boss Blind' } as const
+const LABEL_TINT = { small: '#9fc7ff', big: '#ffd166', boss: '#ff8ba0' } as const
+
+const TRACK_LIST: { key: string; label: string; ante?: number }[] = [
+  { key: 'menu', label: 'Menu & Shop' },
+  ...([1, 2, 3, 4, 5, 6, 7, 8] as const).flatMap((ante) =>
+    (['small', 'big', 'boss'] as const).map((blind) => ({
+      key: `a${ante}-${blind}`,
+      label: `Ante ${ante} · ${BLIND_LABEL[blind]}`,
+      ante,
+    })),
+  ),
+]
+
+function SoundTest() {
+  const stats = useGame((s) => s.stats)
+  const musicOn = useGame((s) => s.settings.music)
+  const playTrack = useGame((s) => s.playTrack)
+  const [nowPlaying, setNowPlaying] = useState<string | null>(null)
+  // a track unlocks once your best run has reached its ante; the menu tune is a freebie
+  const unlockedCount = TRACK_LIST.filter((t) => !t.ante || t.ante <= stats.bestAnte).length
+
+  const toggle = (key: string) => {
+    const next = nowPlaying === key ? null : key
+    setNowPlaying(next)
+    playTrack(next)
+  }
+
+  return (
+    <Section title={`Sound Test (${unlockedCount}/${TRACK_LIST.length} unlocked)`} grid>
+      {!musicOn && (
+        <p className="col-span-full text-xs text-amber-300/80 -mt-1">
+          Music is switched off in settings — cassettes will play silently.
+        </p>
+      )}
+      {TRACK_LIST.map(({ key, label, ante }) => {
+        const unlocked = !ante || ante <= stats.bestAnte
+        const info = TRACK_INFO[key]
+        const active = nowPlaying === key
+        const tint = key === 'menu' ? undefined : LABEL_TINT[key.split('-')[1] as keyof typeof LABEL_TINT]
+        return (
+          <button
+            key={key}
+            className={`panel p-2 flex items-center gap-2 text-left transition-shadow ${
+              active ? 'ring-2 ring-[var(--gold)]' : ''
+            } ${unlocked ? 'hover:ring-1 hover:ring-slate-400' : 'opacity-60 cursor-default'}`}
+            onClick={unlocked ? () => toggle(key) : undefined}
+            disabled={!unlocked}
+            aria-pressed={active}
+          >
+            <PixelSprite
+              sprite={unlocked ? (tint ? { grid: CASSETTE_ART.grid, palette: { W: tint } } : CASSETTE_ART) : MYSTERY_ART}
+              size={38}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-bold truncate">{unlocked ? info.title : '???'}</span>
+              <span className="block text-[10px] text-slate-400 truncate">
+                {label}
+                {unlocked && ` · ${info.artist}`}
+              </span>
+            </span>
+            <span className="text-slate-300 text-sm w-4 text-center" aria-hidden>
+              {active ? '■' : unlocked ? '▶' : ''}
+            </span>
+          </button>
+        )
+      })}
+      <p className="col-span-full text-[11px] text-slate-500">
+        Reach an ante in any run to unlock its three tracks. All music is public domain — see CREDITS.md.
+      </p>
+    </Section>
+  )
+}
 
 export function CollectionScreen() {
   const goTo = useGame((s) => s.goTo)
@@ -154,6 +235,8 @@ export function CollectionScreen() {
           )
         })}
       </Section>
+
+      <SoundTest />
 
       <Section title="Card Enhancements" grid>
         {Object.values(ENHANCEMENTS).map((d) => (

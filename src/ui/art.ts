@@ -1599,6 +1599,22 @@ export const DECK_ART: Record<string, SpriteDef> = {
   },
 }
 
+// cassette shell for the collection's Sound Test; the label color (W) is
+// overridden per blind type at render time
+export const CASSETTE_ART: SpriteDef = {
+  grid: [
+    '.KKKKKKKKKK.',
+    'KSSSSSSSSSSK',
+    'KSWWWWWWWWSK',
+    'KSWGWWWWGWSK',
+    'KSWWWWWWWWSK',
+    'KSSSSSSSSSSK',
+    'KSS.SSSS.SSK',
+    'KSSSSSSSSSSK',
+    '.KKKKKKKKKK.',
+  ],
+}
+
 // big "?" for undiscovered collection entries
 export const MYSTERY_ART: SpriteDef = {
   grid: [

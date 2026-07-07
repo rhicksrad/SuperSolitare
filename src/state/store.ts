@@ -14,7 +14,7 @@ import type { LifetimeStats } from '../engine/save'
 import type { ScorePop } from '../engine/scoring'
 import { bossBlockReason, performMove } from '../engine/scoring'
 import type { RunState } from '../engine/types'
-import { configureAudio, preloadMusic, roundMusicScene, setMusicScene, sfx, unlockAudio } from '../ui/audio'
+import { configureAudio, preloadMusic, roundMusicScene, setJukebox, setMusicScene, sfx, unlockAudio } from '../ui/audio'
 
 export type Screen =
   | 'menu'
@@ -111,6 +111,8 @@ interface GameStore {
   goTo: (screen: Screen) => void
   updateSettings: (patch: Partial<Settings>) => void
   enterEndless: () => void
+  /** Sound Test: play a music track from the collection (null stops it) */
+  playTrack: (track: string | null) => void
 
   // blind select
   playBlind: () => void
@@ -377,6 +379,12 @@ export const useGame = create<GameStore>((set, get) => {
       set({ screen })
     },
 
+    playTrack: (track) => {
+      unlockAudio()
+      sfx.click()
+      setJukebox(track)
+    },
+
     updateSettings: (patch) => {
       const settings = { ...get().settings, ...patch }
       try {
@@ -405,7 +413,13 @@ export const useGame = create<GameStore>((set, get) => {
       const { round, run: nextRun } = startRound(run)
       if (round.bossId) sfx.bossSting()
       else sfx.deal()
-      set({ run: nextRun, round, screen: 'playing', selection: null, pops: [], lastPlay: null, roundResult: null, stuck: false, skipReward: null })
+      // reaching an ante counts immediately (the Sound Test unlocks by bestAnte)
+      let stats = get().stats
+      if (run.ante > stats.bestAnte) {
+        stats = { ...stats, bestAnte: run.ante }
+        saveStats(stats)
+      }
+      set({ run: nextRun, round, screen: 'playing', selection: null, pops: [], lastPlay: null, roundResult: null, stuck: false, skipReward: null, stats })
       persist(get)
     },
 
@@ -683,6 +697,7 @@ configureAudio(useGame.getState().settings)
 // so the next blind's music starts without a network wait
 useGame.subscribe((state) => {
   const { run } = state
+  if (state.screen !== 'collection') setJukebox(null) // Sound Test ends with the visit
   if (state.screen === 'playing' && state.round && run) {
     setMusicScene(roundMusicScene(run.ante, run.blindIndex))
   } else {

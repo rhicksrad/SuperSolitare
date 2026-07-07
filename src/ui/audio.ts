@@ -180,11 +180,43 @@ export function roundMusicScene(ante: number, blindIndex: number): MusicScene {
   return `a${a}-${blind}`
 }
 
+// Titles/composers for the collection's Sound Test (mirrors public/music/CREDITS.md).
+export const TRACK_INFO: Record<MusicScene, { title: string; artist: string }> = {
+  menu: { title: 'Be Chillin', artist: 'Alexander Nakarada' },
+  'a1-small': { title: '3 am West End', artist: 'Kevin MacLeod' },
+  'a1-big': { title: 'A Good Bass for Gambling', artist: 'Komiku' },
+  'a1-boss': { title: 'Bit Bit Loop', artist: 'Kevin MacLeod' },
+  'a2-small': { title: 'Bass Meant Jazz', artist: 'Kevin MacLeod' },
+  'a2-big': { title: 'Sunday Dub', artist: 'Kevin MacLeod' },
+  'a2-boss': { title: 'Blippy Trance', artist: 'Kevin MacLeod' },
+  'a3-small': { title: 'Compy Jazz', artist: 'Kevin MacLeod' },
+  'a3-big': { title: 'Downtown Boogie', artist: 'Bryan Teoh' },
+  'a3-boss': { title: 'Drop Point', artist: 'Bryan Teoh' },
+  'a4-small': { title: 'Martini Sunset', artist: 'FreePD' },
+  'a4-big': { title: 'Groovin', artist: 'Brian Boyko' },
+  'a4-boss': { title: 'Spec Ops', artist: 'FreePD' },
+  'a5-small': { title: 'Midnight in the Green House', artist: 'Kevin MacLeod' },
+  'a5-big': { title: 'Funkeriffic', artist: 'Kevin MacLeod' },
+  'a5-boss': { title: 'Guerilla Tactics', artist: 'FreePD' },
+  'a6-small': { title: 'Patron Saint of Heists', artist: 'Bryan Teoh' },
+  'a6-big': { title: 'Funky Energy Loop', artist: 'Kevin MacLeod' },
+  'a6-boss': { title: 'Apex', artist: 'Alexander Nakarada' },
+  'a7-small': { title: 'Lucky Break', artist: 'Bryan Teoh' },
+  'a7-big': { title: "Gotta Keep On Movin'", artist: 'Bryan Teoh' },
+  'a7-boss': { title: 'Evil Incoming', artist: 'Kevin MacLeod' },
+  'a8-small': { title: 'Uberpunch', artist: 'Alexander Nakarada' },
+  'a8-big': { title: 'Circuit', artist: 'FreePD' },
+  'a8-boss': { title: 'Goodnightmare', artist: 'Kevin MacLeod' },
+}
+
 let musicBus: GainNode | null = null
 let scene: MusicScene = 'menu'
+let jukebox: MusicScene | null = null // Sound Test override; wins over the game scene
 let musicOn = false // startMusic() called and not yet stopped
 let playing: { scene: MusicScene; src: AudioBufferSourceNode; gain: GainNode } | null = null
 const buffers = new Map<MusicScene, Promise<AudioBuffer | null>>()
+
+const effectiveScene = () => jukebox ?? scene
 
 function loadBuffer(c: AudioContext, s: MusicScene): Promise<AudioBuffer | null> {
   let p = buffers.get(s)
@@ -217,7 +249,7 @@ async function playScene(s: MusicScene) {
   if (playing?.scene === s) return
   const buf = await loadBuffer(c, s)
   // the world may have moved on while the track decoded
-  if (!buf || !musicOn || !musicEnabled || scene !== s || playing?.scene === s) return
+  if (!buf || !musicOn || !musicEnabled || effectiveScene() !== s || playing?.scene === s) return
   if (!musicBus) {
     musicBus = c.createGain()
     musicBus.gain.value = MUSIC_LEVEL
@@ -245,7 +277,14 @@ async function playScene(s: MusicScene) {
 export function setMusicScene(s: MusicScene) {
   if (scene === s) return
   scene = s
-  if (musicOn) void playScene(s)
+  if (musicOn && !jukebox) void playScene(s)
+}
+
+/** Sound Test override: play an arbitrary track (null resumes the game scene). */
+export function setJukebox(s: MusicScene | null) {
+  if (jukebox === s) return
+  jukebox = s
+  if (musicOn) void playScene(effectiveScene())
 }
 
 export function startMusic() {
@@ -253,7 +292,7 @@ export function startMusic() {
   const c = ensureCtx()
   if (!c) return
   musicOn = true
-  void playScene(scene)
+  void playScene(effectiveScene())
   void loadBuffer(c, 'menu') // the one scene every session returns to
 }
 
