@@ -218,6 +218,29 @@ const buffers = new Map<MusicScene, Promise<AudioBuffer | null>>()
 
 const effectiveScene = () => jukebox ?? scene
 
+let analyser: AnalyserNode | null = null
+let analyserBins: Uint8Array | null = null
+
+/**
+ * Current music levels (0..1) for UI reactivity — zeros when nothing plays.
+ * Boosted to compensate for MUSIC_LEVEL sitting on the bus ahead of the tap.
+ */
+export function musicLevels(): { bass: number; energy: number } {
+  if (!analyser || !analyserBins) return { bass: 0, energy: 0 }
+  analyser.getByteFrequencyData(analyserBins)
+  const bassBins = 6
+  let bassSum = 0
+  let sum = 0
+  for (let i = 0; i < analyserBins.length; i++) {
+    sum += analyserBins[i]
+    if (i < bassBins) bassSum += analyserBins[i]
+  }
+  return {
+    bass: Math.min(1, (bassSum / (bassBins * 255)) * 1.2),
+    energy: Math.min(1, (sum / (analyserBins.length * 255)) * 2.2),
+  }
+}
+
 function loadBuffer(c: AudioContext, s: MusicScene): Promise<AudioBuffer | null> {
   let p = buffers.get(s)
   if (!p) {
@@ -254,6 +277,12 @@ async function playScene(s: MusicScene) {
     musicBus = c.createGain()
     musicBus.gain.value = MUSIC_LEVEL
     musicBus.connect(master)
+    // side tap for UI reactivity (MusicGlow); the analyser outputs nowhere
+    analyser = c.createAnalyser()
+    analyser.fftSize = 128
+    analyser.smoothingTimeConstant = 0.6
+    analyserBins = new Uint8Array(analyser.frequencyBinCount)
+    musicBus.connect(analyser)
   }
   const t = c.currentTime
   if (playing) {

@@ -31,6 +31,7 @@ function migrate(payload: SavePayload): SavePayload {
   run.deckId ??= 'classic'
   run.stake ??= 0
   run.endless ??= false
+  run.history ??= [] // pre-recap saves; the run recap tolerates a short history
   if (payload.round) {
     payload.round.curses ??= []
     payload.round.wasteFan ??= Math.min(payload.round.rules.dealSize, payload.round.waste.length)

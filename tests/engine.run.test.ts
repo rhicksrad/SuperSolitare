@@ -82,6 +82,22 @@ describe('run structure', () => {
     expect(res3.runWon).toBe(true)
   })
 
+  it('records every finished round in history, including a losing one', () => {
+    const run = newRun('hist')
+    const { round } = startRound(run)
+    round.score = round.target + 50
+    const { run: after } = finishRound(run, round)
+    expect(after.history).toEqual([{ ante: 1, blind: 'small', score: round.target + 50, target: round.target }])
+
+    // the fatal round lands in history too — the run recap shows it dimmed
+    const { round: r2 } = startRound(after)
+    r2.score = 1
+    const { run: after2, result } = finishRound(after, r2)
+    expect(result.won).toBe(false)
+    expect(after2.history).toHaveLength(2)
+    expect(after2.history[1]).toMatchObject({ ante: 1, blind: 'big', score: 1 })
+  })
+
   it('golden joker pays at round end', () => {
     const run = newRun('gold')
     run.jokers = [newJokerInstance('golden-joker')]
